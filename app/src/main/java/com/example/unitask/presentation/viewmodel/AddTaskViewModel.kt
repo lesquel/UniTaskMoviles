@@ -1,0 +1,126 @@
+package com.example.unitask.presentation.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.unitask.domain.model.Subject
+import com.example.unitask.domain.usecase.AddTaskUseCase
+import com.example.unitask.domain.usecase.GetSubjectsUseCase
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+
+class AddTaskViewModel(
+    getSubjectsUseCase: GetSubjectsUseCase,
+    private val addTaskUseCase: AddTaskUseCase,
+    private val nowProvider: () -> LocalDateTime
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow(AddTaskUiState())
+    val uiState: StateFlow<AddTaskUiState> = _uiState.asStateFlow()
+
+    private val subjectsFlow = getSubjectsUseCase()
+        .map { list -> list.map { it.toOption() } }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    private val _events = MutableSharedFlow<AddTaskEvent>()
+    val events = _events
+
+    init {
+        viewModelScope.launch {
+            subjectsFlow.collect { options ->
+                _uiState.updateDetails { copy(subjects = options) }
+            }
+        }
+    }
+
+    fun onTitleChanged(value: String) {
+        _uiState.updateDetails { copy(title = value, errorMessage = null) }
+    }
+
+    fun onSubjectSelected(subjectId: String) {
+        _uiState.updateDetails { copy(selectedSubjectId = subjectId, errorMessage = null) }
+    }
+
+    fun onDateSelected(date: LocalDate) {
+        _uiState.updateDetails { copy(dueDate = date, errorMessage = null) }
+    }
+
+    fun onTimeSelected(time: LocalTime) {
+        _uiState.updateDetails { copy(dueTime = time, errorMessage = null) }
+    }
+
+    fun submit() {
+        val current = _uiState.value
+        val subjectId = current.selectedSubjectId
+        val date = current.dueDate
+        val time = current.dueTime
+
+        if (subjectId == null || date == null || time == null) {
+            _uiState.updateDetails { copy(errorMessage = "Falta información obligatoria.") }
+            return
+        }
+
+        val dueDateTime = LocalDateTime.of(date, time)
+
+        viewModelScope.launch {
+            _uiState.updateDetails { copy(isSubmitting = true, errorMessage = null) }
+            runCatching {
+                addTaskUseCase(
+                    title = current.title,
+                    subjectId = subjectId,
+                    dueDateTime = dueDateTime
+                )
+            }
+                .onSuccess { task ->
+                    _events.emit(AddTaskEvent.Success(task.id))
+                    _uiState.value = AddTaskUiState(subjects = subjectsFlow.value)
+                }
+                .onFailure { error ->
+                    _uiState.updateDetails { copy(isSubmitting = false, errorMessage = error.message) }
+                    _events.emit(AddTaskEvent.Error(error.message ?: "Error al guardar"))
+                }
+        }
+    }
+
+    private fun Subject.toOption(): SubjectOption = SubjectOption(
+        id = id,
+        name = name,
+        colorHex = colorHex
+    )
+
+    private inline fun MutableStateFlow<AddTaskUiState>.updateDetails(
+        crossinline transform: AddTaskUiState.() -> AddTaskUiState
+    ) {
+        value = value.transform()
+    }
+}
+
+data class AddTaskUiState(
+    val title: String = "",
+    val selectedSubjectId: String? = null,
+    val dueDate: LocalDate? = null,
+    val dueTime: LocalTime? = null,
+    val subjects: List<SubjectOption> = emptyList(),
+    val isSubmitting: Boolean = false,
+    val errorMessage: String? = null
+)
+
+data class SubjectOption(
+    val id: String,
+    val name: String,
+    val colorHex: String
+)
+
+sealed class AddTaskEvent {
+    data class Success(val taskId: String) : AddTaskEvent()
+    data class Error(val message: String) : AddTaskEvent()
+}
