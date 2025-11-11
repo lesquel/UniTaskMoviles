@@ -4,8 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import com.example.unitask.presentation.navigation.UniTaskApp
 import com.example.unitask.ui.theme.UniTaskTheme
-import com.example.unitask.presentation.ui.screens.DashboardRoute
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -13,7 +13,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             UniTaskTheme {
-                DashboardRoute()
+                UniTaskApp()
             }
         }
     }

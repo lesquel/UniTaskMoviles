@@ -35,9 +35,13 @@ class AddTaskViewModel(
     val events = _events
 
     init {
+        resetDueDateDefaults()
         viewModelScope.launch {
             subjectsFlow.collect { options ->
-                _uiState.updateDetails { copy(subjects = options) }
+                _uiState.updateDetails {
+                    val updatedSelection = selectedSubjectId ?: options.firstOrNull()?.id
+                    copy(subjects = options, selectedSubjectId = updatedSelection)
+                }
             }
         }
     }
@@ -82,7 +86,10 @@ class AddTaskViewModel(
             }
                 .onSuccess { task ->
                     _events.emit(AddTaskEvent.Success(task.id))
-                    _uiState.value = AddTaskUiState(subjects = subjectsFlow.value)
+                    _uiState.value = AddTaskUiState(
+                        subjects = subjectsFlow.value,
+                        selectedSubjectId = subjectsFlow.value.firstOrNull()?.id
+                    ).withDefaultDueDate()
                 }
                 .onFailure { error ->
                     _uiState.updateDetails { copy(isSubmitting = false, errorMessage = error.message) }
@@ -90,6 +97,20 @@ class AddTaskViewModel(
                 }
         }
     }
+
+    private fun resetDueDateDefaults() {
+        _uiState.value = _uiState.value.withDefaultDueDate()
+    }
+
+    private fun AddTaskUiState.withDefaultDueDate(): AddTaskUiState {
+        val default = defaultDueDateTime()
+        return copy(
+            dueDate = default.toLocalDate(),
+            dueTime = default.toLocalTime().withSecond(0).withNano(0)
+        )
+    }
+
+    private fun defaultDueDateTime(): LocalDateTime = nowProvider().plusHours(1)
 
     private fun Subject.toOption(): SubjectOption = SubjectOption(
         id = id,

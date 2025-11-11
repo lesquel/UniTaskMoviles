@@ -12,12 +12,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -44,7 +46,8 @@ import com.example.unitask.presentation.viewmodel.TaskUiModel
 @Composable
 fun DashboardRoute(
     viewModel: DashboardViewModel = viewModel(factory = AppModule.viewModelFactory),
-    onAddTaskClick: () -> Unit = {}
+    onAddTaskClick: () -> Unit = {},
+    onManageSubjectsClick: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -61,6 +64,7 @@ fun DashboardRoute(
         state = state,
         snackbarHostState = snackbarHostState,
         onAddTaskClick = onAddTaskClick,
+        onManageSubjectsClick = onManageSubjectsClick,
         onTaskCompleted = viewModel::onTaskCompleted
     )
 }
@@ -71,12 +75,20 @@ fun DashboardScreen(
     state: DashboardUiState,
     snackbarHostState: SnackbarHostState,
     onAddTaskClick: () -> Unit,
+    onManageSubjectsClick: () -> Unit,
     onTaskCompleted: (String) -> Unit
 ) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
-            TopAppBar(title = { Text(text = "UniTask") })
+            TopAppBar(
+                title = { Text(text = "UniTask") },
+                actions = {
+                    IconButton(onClick = onManageSubjectsClick) {
+                        Icon(imageVector = Icons.AutoMirrored.Filled.List, contentDescription = "Gestionar asignaturas")
+                    }
+                }
+            )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = onAddTaskClick) {

@@ -9,6 +9,17 @@ Este documento describe en detalle el plan para implementar la aplicación UniTa
 - Persistencia (prototipo): en memoria usando MutableStateFlow / SnapshotStateList.
 - Objetivo: app minimalista para registrar tareas por "Asignatura" y priorizar tareas urgentes (próximas 24-48h).
 
+## Progreso
+
+- [x] Día 1: Modelos, repositorios en memoria y datos seed.
+- [x] Día 2: UseCases y pruebas unitarias iniciales.
+- [x] Día 3: Wiring manual de dependencias y ViewModels.
+- [x] Día 4: Dashboard UI en Compose.
+- [x] Día 5: Pantalla de alta de tareas con validaciones.
+- [x] Día 6: Pantalla de gestión de asignaturas con edición/eliminación.
+- [ ] Día 7: Pruebas de UI adicionales y polish.
+- [ ] Día 8: Documentación final y preparación de entrega.
+
 ---
 
 ## Contrato breve (inputs/outputs, criterios de éxito)
