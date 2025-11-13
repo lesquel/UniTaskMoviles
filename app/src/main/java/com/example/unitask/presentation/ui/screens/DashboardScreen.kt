@@ -10,14 +10,60 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.draw.alpha
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.unit.Dp
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Brightness4
+import androidx.compose.material.icons.filled.Brightness7
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -39,6 +85,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.unitask.di.AppModule
 import com.example.unitask.presentation.ui.components.TaskCard
+import com.example.unitask.presentation.ui.components.EmptyState
 import com.example.unitask.presentation.viewmodel.DashboardUiState
 import com.example.unitask.presentation.viewmodel.DashboardViewModel
 import com.example.unitask.presentation.viewmodel.TaskUiModel
@@ -47,7 +94,9 @@ import com.example.unitask.presentation.viewmodel.TaskUiModel
 fun DashboardRoute(
     viewModel: DashboardViewModel = viewModel(factory = AppModule.viewModelFactory),
     onAddTaskClick: () -> Unit = {},
-    onManageSubjectsClick: () -> Unit = {}
+    onManageSubjectsClick: () -> Unit = {},
+    isDarkTheme: Boolean = false,
+    onToggleTheme: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -65,18 +114,22 @@ fun DashboardRoute(
         snackbarHostState = snackbarHostState,
         onAddTaskClick = onAddTaskClick,
         onManageSubjectsClick = onManageSubjectsClick,
-        onTaskCompleted = viewModel::onTaskCompleted
+        onTaskCompleted = viewModel::onTaskCompleted,
+        isDarkTheme = isDarkTheme,
+        onToggleTheme = onToggleTheme
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-@OptIn(ExperimentalMaterial3Api::class)
 fun DashboardScreen(
     state: DashboardUiState,
     snackbarHostState: SnackbarHostState,
     onAddTaskClick: () -> Unit,
     onManageSubjectsClick: () -> Unit,
-    onTaskCompleted: (String) -> Unit
+    onTaskCompleted: (String) -> Unit,
+    isDarkTheme: Boolean = false,
+    onToggleTheme: () -> Unit = {}
 ) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -84,6 +137,12 @@ fun DashboardScreen(
             TopAppBar(
                 title = { Text(text = "UniTask") },
                 actions = {
+                    IconButton(onClick = onToggleTheme) {
+                        Icon(
+                            imageVector = if (isDarkTheme) Icons.Default.Brightness7 else Icons.Default.Brightness4,
+                            contentDescription = "Cambiar tema"
+                        )
+                    }
                     IconButton(onClick = onManageSubjectsClick) {
                         Icon(imageVector = Icons.AutoMirrored.Filled.List, contentDescription = "Gestionar asignaturas")
                     }
@@ -91,7 +150,11 @@ fun DashboardScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = onAddTaskClick) {
+            FloatingActionButton(
+                onClick = onAddTaskClick,
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            ) {
                 Icon(imageVector = Icons.Default.Add, contentDescription = "Añadir tarea")
             }
         },
@@ -119,11 +182,13 @@ fun DashboardScreen(
                     EmptyState()
                 }
             } else {
-                items(state.allTasks) { task ->
+                items(state.allTasks, key = { it.id }) { task ->
                     TaskCard(
                         task = task,
                         onTaskCompleted = onTaskCompleted,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .animateItemPlacement()
                     )
                 }
             }
@@ -131,6 +196,7 @@ fun DashboardScreen(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun UrgentTasksSection(
     tasks: List<TaskUiModel>,
@@ -151,11 +217,13 @@ private fun UrgentTasksSection(
             )
         } else {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(tasks) { task ->
+                items(tasks, key = { it.id }) { task ->
                     TaskCard(
                         task = task,
                         onTaskCompleted = onTaskCompleted,
-                        modifier = Modifier.width(260.dp)
+                        modifier = Modifier
+                            .width(260.dp)
+                            .animateItemPlacement()
                     )
                 }
             }

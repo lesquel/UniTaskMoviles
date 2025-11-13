@@ -17,6 +17,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Brightness4
+import androidx.compose.material.icons.filled.Brightness7
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -55,7 +57,9 @@ import com.example.unitask.presentation.viewmodel.SubjectsViewModel
 @Composable
 fun SubjectsRoute(
     viewModel: SubjectsViewModel = viewModel(factory = AppModule.viewModelFactory),
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    isDarkTheme: Boolean = false,
+    onToggleTheme: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -89,7 +93,9 @@ fun SubjectsRoute(
                 teacher = subject.teacher.orEmpty()
             )
         },
-        onDelete = { subject -> subjectToDelete = subject }
+        onDelete = { subject -> subjectToDelete = subject },
+        isDarkTheme = isDarkTheme,
+        onToggleTheme = onToggleTheme
     )
 
     dialogState?.let { current ->
@@ -127,7 +133,9 @@ private fun SubjectsScreen(
     onBack: () -> Unit,
     onAddClick: () -> Unit,
     onEdit: (SubjectItem) -> Unit,
-    onDelete: (SubjectItem) -> Unit
+    onDelete: (SubjectItem) -> Unit,
+    isDarkTheme: Boolean = false,
+    onToggleTheme: () -> Unit = {}
 ) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -137,6 +145,14 @@ private fun SubjectsScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onToggleTheme) {
+                        Icon(
+                            imageVector = if (isDarkTheme) Icons.Default.Brightness7 else Icons.Default.Brightness4,
+                            contentDescription = "Cambiar tema"
+                        )
                     }
                 }
             )

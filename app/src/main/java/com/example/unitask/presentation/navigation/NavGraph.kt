@@ -17,18 +17,26 @@ private enum class UniTaskDestination(val route: String) {
 }
 
 @Composable
-fun UniTaskApp(modifier: Modifier = Modifier) {
+fun UniTaskApp(
+    modifier: Modifier = Modifier,
+    isDarkTheme: Boolean,
+    onToggleTheme: () -> Unit
+) {
     val navController = rememberNavController()
     UniTaskNavHost(
         navController = navController,
-        modifier = modifier
+        modifier = modifier,
+        isDarkTheme = isDarkTheme,
+        onToggleTheme = onToggleTheme
     )
 }
 
 @Composable
 private fun UniTaskNavHost(
     navController: NavHostController,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isDarkTheme: Boolean,
+    onToggleTheme: () -> Unit
 ) {
     NavHost(
         navController = navController,
@@ -38,7 +46,9 @@ private fun UniTaskNavHost(
         composable(UniTaskDestination.Dashboard.route) {
             DashboardRoute(
                 onAddTaskClick = { navController.navigate(UniTaskDestination.AddTask.route) },
-                onManageSubjectsClick = { navController.navigate(UniTaskDestination.Subjects.route) }
+                onManageSubjectsClick = { navController.navigate(UniTaskDestination.Subjects.route) },
+                isDarkTheme = isDarkTheme,
+                onToggleTheme = onToggleTheme
             )
         }
         composable(UniTaskDestination.AddTask.route) {
@@ -48,7 +58,9 @@ private fun UniTaskNavHost(
         }
         composable(UniTaskDestination.Subjects.route) {
             SubjectsRoute(
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                isDarkTheme = isDarkTheme,
+                onToggleTheme = onToggleTheme
             )
         }
     }
