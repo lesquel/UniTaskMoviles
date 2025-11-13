@@ -144,7 +144,7 @@ private fun SubjectsScreen(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text(text = "Asignaturas") },
+                title = { Text(text = stringResource(id = com.example.unitask.R.string.subjects_title)) },
                 navigationIcon = {
                         IconButton(onClick = onBack) {
                             Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(id = com.example.unitask.R.string.back))
@@ -214,10 +214,10 @@ private fun SubjectCard(
                     }
                 }
                 IconButton(onClick = onEdit) {
-                    Icon(imageVector = Icons.Default.Edit, contentDescription = "Editar")
+                    Icon(imageVector = Icons.Default.Edit, contentDescription = stringResource(id = com.example.unitask.R.string.edit))
                 }
                 IconButton(onClick = onDelete) {
-                    Icon(imageVector = Icons.Default.Delete, contentDescription = "Eliminar")
+                    Icon(imageVector = Icons.Default.Delete, contentDescription = stringResource(id = com.example.unitask.R.string.delete))
                 }
             }
         }
@@ -241,10 +241,10 @@ private fun EmptySubjectsState(modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text = "Aún no tienes asignaturas", style = MaterialTheme.typography.titleMedium)
+        Text(text = stringResource(id = com.example.unitask.R.string.no_subjects_message), style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Añade una para organizar tus tareas",
+            text = stringResource(id = com.example.unitask.R.string.add_subject_prompt),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -270,27 +270,27 @@ private fun SubjectDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(text = if (state.id == null) "Nueva asignatura" else "Editar asignatura") },
+        title = { Text(text = if (state.id == null) stringResource(id = com.example.unitask.R.string.new_subject) else stringResource(id = com.example.unitask.R.string.edit_subject)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text(text = "Nombre") },
+                    label = { Text(text = stringResource(id = com.example.unitask.R.string.name_label)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
                     value = colorHex,
                     onValueChange = { colorHex = it },
-                    label = { Text(text = "Color (hex)") },
+                    label = { Text(text = stringResource(id = com.example.unitask.R.string.color_label)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
                     value = teacher,
                     onValueChange = { teacher = it },
-                    label = { Text(text = "Profesor/a (opcional)") },
+                    label = { Text(text = stringResource(id = com.example.unitask.R.string.teacher_label)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -310,12 +310,12 @@ private fun SubjectDialog(
                     )
                 }
             ) {
-                Text(text = "Guardar")
+                Text(text = stringResource(id = com.example.unitask.R.string.save))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(text = "Cancelar")
+                Text(text = stringResource(id = com.example.unitask.R.string.cancel))
             }
         }
     )
@@ -330,16 +330,16 @@ private fun ConfirmDeleteDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(text = "Eliminar asignatura") },
-        text = { Text(text = "¿Eliminar ${subject.name}? Se eliminarán sus tareas asociadas.") },
+        title = { Text(text = stringResource(id = com.example.unitask.R.string.delete_subject_title)) },
+        text = { Text(text = stringResource(id = com.example.unitask.R.string.delete_subject_confirm, subject.name)) },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text(text = "Eliminar")
+                Text(text = stringResource(id = com.example.unitask.R.string.delete_label))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(text = "Cancelar")
+                Text(text = stringResource(id = com.example.unitask.R.string.cancel))
             }
         }
     )

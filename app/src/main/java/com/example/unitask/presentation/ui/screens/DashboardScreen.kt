@@ -93,7 +93,7 @@ fun DashboardScreen(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text(text = "UniTask") },
+                title = { Text(text = stringResource(id = com.example.unitask.R.string.title_unittask)) },
                 actions = {
                     IconButton(onClick = onToggleTheme) {
                         Icon(
@@ -130,7 +130,7 @@ fun DashboardScreen(
             }
             item {
                 Text(
-                    text = "Todas las tareas",
+                    text = stringResource(id = com.example.unitask.R.string.all_tasks),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -162,14 +162,14 @@ private fun UrgentTasksSection(
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
-            text = "Urgente",
+            text = stringResource(id = com.example.unitask.R.string.urgent),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.height(12.dp))
         if (tasks.isEmpty()) {
             Text(
-                text = "Sin entregas en las próximas 48 horas",
+                text = stringResource(id = com.example.unitask.R.string.no_deliveries_48h),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

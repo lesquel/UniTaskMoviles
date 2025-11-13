@@ -31,6 +31,7 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.ui.res.stringResource
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -70,10 +71,10 @@ fun AddTaskRoute(
         viewModel.events.collect { event ->
             when (event) {
                 is AddTaskEvent.Success -> {
-                    snackbarHostState.showSnackbar(
-                        message = "Tarea creada correctamente",
-                        duration = SnackbarDuration.Short
-                    )
+                        snackbarHostState.showSnackbar(
+                            message = stringResource(id = com.example.unitask.R.string.task_created),
+                            duration = SnackbarDuration.Short
+                        )
                     onTaskSaved()
                 }
                 is AddTaskEvent.Error -> {
@@ -113,16 +114,16 @@ fun AddTaskScreen(
     val context = LocalContext.current
     val dateFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.getDefault()) }
     val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault()) }
-    val dueDateText = state.dueDate?.format(dateFormatter) ?: "Selecciona fecha"
-    val dueTimeText = state.dueTime?.format(timeFormatter) ?: "Selecciona hora"
+    val dueDateText = state.dueDate?.format(dateFormatter) ?: stringResource(id = com.example.unitask.R.string.select_date)
+    val dueTimeText = state.dueTime?.format(timeFormatter) ?: stringResource(id = com.example.unitask.R.string.select_time)
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text(text = "Nueva tarea") },
+                title = { Text(text = stringResource(id = com.example.unitask.R.string.new_task)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(id = com.example.unitask.R.string.back))
                     }
                 }
             )
@@ -140,7 +141,7 @@ fun AddTaskScreen(
                 value = state.title,
                 onValueChange = onTitleChanged,
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text(text = "Título") },
+                label = { Text(text = stringResource(id = com.example.unitask.R.string.title_label)) },
                 singleLine = true
             )
             SubjectSelector(
@@ -185,7 +186,7 @@ fun AddTaskScreen(
                 enabled = !state.isSubmitting && state.subjects.isNotEmpty(),
                 modifier = Modifier.align(Alignment.End)
             ) {
-                Text(text = if (state.isSubmitting) "Guardando..." else "Guardar tarea")
+                Text(text = if (state.isSubmitting) stringResource(id = com.example.unitask.R.string.saving) else stringResource(id = com.example.unitask.R.string.save_task))
             }
         }
     }
@@ -200,9 +201,9 @@ private fun SubjectSelector(
 ) {
     if (subjects.isEmpty()) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(text = "Asignatura", style = MaterialTheme.typography.labelMedium)
+            Text(text = stringResource(id = com.example.unitask.R.string.subject_label), style = MaterialTheme.typography.labelMedium)
             Text(
-                text = "Añade una asignatura desde la sección de gestión.",
+                text = stringResource(id = com.example.unitask.R.string.add_subject_hint),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -223,8 +224,8 @@ private fun SubjectSelector(
             modifier = Modifier
                 .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
                 .fillMaxWidth(),
-            label = { Text(text = "Asignatura") },
-            placeholder = { Text(text = "Selecciona asignatura") },
+            label = { Text(text = stringResource(id = com.example.unitask.R.string.subject_label)) },
+            placeholder = { Text(text = stringResource(id = com.example.unitask.R.string.select_subject_placeholder)) },
             readOnly = true,
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) }
         )
