@@ -130,7 +130,8 @@ object AppModule {
         _appContext = context.applicationContext
         if (_alarmScheduler == null) {
             val am = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
-            _alarmScheduler = com.example.unitask.notifications.AlarmScheduler(context.applicationContext, am)
+            val wrapper = com.example.unitask.notifications.RealAlarmManagerWrapper(am)
+            _alarmScheduler = com.example.unitask.notifications.AlarmScheduler(context.applicationContext, wrapper)
         }
     }
 

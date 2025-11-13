@@ -4,8 +4,8 @@ import com.example.unitask.domain.repository.RewardRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
-// Legacy file left for compatibility — renamed to avoid duplicate class error.
-class RoomRewardRepository : RewardRepository {
+// In-memory placeholder implementation to replace the old Room-backed repository.
+class InMemoryRewardRepository : RewardRepository {
     private val xpFlow = MutableStateFlow(0)
     private val levelFlow = MutableStateFlow(1)
 

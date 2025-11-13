@@ -24,10 +24,12 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.runtime.Composable
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -100,48 +102,72 @@ private fun AlarmRow(setting: NotificationSetting, onEdit: () -> Unit, onDelete:
 @Composable
 private fun AlarmEditDialog(initial: NotificationSetting?, onDismiss: () -> Unit, onSave: (NotificationSetting) -> Unit) {
     var enabled by remember { mutableStateOf(initial?.enabled ?: true) }
-    var useMinutes by remember { mutableStateOf(initial?.useMinutes ?: true) }
-    var amountText by remember { mutableStateOf( if (initial != null) {
+    var amountText by remember { mutableStateOf(if (initial != null) {
         val unit = if (initial.useMinutes) 60000L else 3600000L
         ((initial.triggerAtMillis - System.currentTimeMillis()) / unit).coerceAtLeast(1).toString()
     } else "60") }
     var exact by remember { mutableStateOf(initial?.exact ?: false) }
+    var amountError by remember { mutableStateOf<String?>(null) }
+    var unitIsMinutes by remember { mutableStateOf(initial?.useMinutes ?: true) }
 
-    AlertDialog(onDismissRequest = onDismiss, confirmButton = {
-        TextButton(onClick = {
-            val amount = amountText.toLongOrNull() ?: 1L
-            val unitMillis = if (useMinutes) 60000L else 3600000L
-            val trigger = System.currentTimeMillis() + amount * unitMillis
-            val id = initial?.id ?: UUID.randomUUID().toString()
-            val setting = NotificationSetting(
-                id = id,
-                taskId = null,
-                enabled = enabled,
-                triggerAtMillis = trigger,
-                repeatIntervalMillis = amount * unitMillis,
-                useMinutes = useMinutes,
-                exact = exact
-            )
-            onSave(setting)
-        }) { Text(text = "Save") }
-    }, dismissButton = {
-        TextButton(onClick = onDismiss) { Text(text = "Cancel") }
-    }, title = { Text(text = if (initial == null) "New Alarm" else "Edit Alarm") }, text = {
-        Column {
-            OutlinedTextField(value = amountText, onValueChange = { amountText = it }, label = { Text("Amount") })
-            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                Checkbox(checked = useMinutes, onCheckedChange = { useMinutes = it })
-                Text(text = "Use minutes")
-            }
-            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                Checkbox(checked = enabled, onCheckedChange = { enabled = it })
-                Text(text = "Enabled")
-            }
-            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                Checkbox(checked = exact, onCheckedChange = { exact = it })
-                Text(text = "Exact alarm")
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = {
+                val amount = amountText.toLongOrNull()
+                if (amount == null || amount <= 0L) {
+                    amountError = "Enter a positive number"
+                    return@TextButton
+                }
+                val unitMillis = if (unitIsMinutes) 60000L else 3600000L
+                val trigger = System.currentTimeMillis() + amount * unitMillis
+                val id = initial?.id ?: UUID.randomUUID().toString()
+                val setting = NotificationSetting(
+                    id = id,
+                    taskId = null,
+                    enabled = enabled,
+                    triggerAtMillis = trigger,
+                    repeatIntervalMillis = amount * unitMillis,
+                    useMinutes = unitIsMinutes,
+                    exact = exact
+                )
+                onSave(setting)
+            }) { Text(text = "Save") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(text = "Cancel") }
+        },
+        title = { Text(text = if (initial == null) "New Alarm" else "Edit Alarm") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = amountText,
+                    onValueChange = {
+                        amountText = it
+                        amountError = null
+                    },
+                    label = { Text("Amount") },
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
+                )
+                if (amountError != null) {
+                    Text(text = amountError ?: "", color = MaterialTheme.colorScheme.error)
+                }
+                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    androidx.compose.material3.RadioButton(selected = unitIsMinutes, onClick = { unitIsMinutes = true })
+                    Text(text = "Minutes")
+                    androidx.compose.material3.RadioButton(selected = !unitIsMinutes, onClick = { unitIsMinutes = false })
+                    Text(text = "Hours")
+                }
+                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    Checkbox(checked = enabled, onCheckedChange = { enabled = it })
+                    Text(text = "Enabled")
+                }
+                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    Checkbox(checked = exact, onCheckedChange = { exact = it })
+                    Text(text = "Exact alarm")
+                }
             }
         }
-    })
+    )
 }
 
