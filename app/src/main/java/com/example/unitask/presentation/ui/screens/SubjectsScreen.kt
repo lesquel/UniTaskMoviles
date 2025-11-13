@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.animateItemPlacement
+import androidx.compose.animation.animateContentSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -85,7 +85,7 @@ fun SubjectsRoute(
     SubjectsScreen(
         state = state,
         snackbarHostState = snackbarHostState,
-            import androidx.compose.animation.animateContentSize
+        onBack = onBack,
         onAddClick = { dialogState = SubjectDialogState() },
         onEdit = { subject ->
             dialogState = SubjectDialogState(
@@ -252,8 +252,7 @@ private data class SubjectDialogState(
     val colorHex: String = "#FF6F61",
     val teacher: String = ""
 )
-
-                                    modifier = Modifier.animateContentSize()
+ 
 @Composable
 private fun SubjectDialog(
     state: SubjectDialogState,
