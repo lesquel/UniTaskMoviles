@@ -14,8 +14,7 @@ import com.example.unitask.ui.theme.UniTaskTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-            // Configure AppModule (Room) at app startup
-            AppModule.setAppContext(applicationContext)
+            // Configure AppModule at app startup
             AppModule.configureAppModule(applicationContext)
             // Create notification channels early
             val nm = getSystemService(android.app.NotificationManager::class.java)
