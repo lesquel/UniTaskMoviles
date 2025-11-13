@@ -19,14 +19,16 @@ import com.example.unitask.domain.usecase.GetSubjectsUseCase
 import com.example.unitask.domain.usecase.GetUrgentTasksUseCase
 import com.example.unitask.presentation.viewmodel.AddTaskViewModel
 import android.content.Context
-import androidx.room.Room
-import com.example.unitask.data.room.AppDatabase
-import com.example.unitask.data.repository.RoomNotificationRepository
-import com.example.unitask.data.repository.RoomRewardRepository
 import com.example.unitask.domain.repository.NotificationRepository
 import com.example.unitask.domain.repository.RewardRepository
 import com.example.unitask.presentation.viewmodel.DashboardViewModel
 import com.example.unitask.presentation.viewmodel.SubjectsViewModel
+import com.example.unitask.presentation.viewmodel.AlarmViewModel
+import com.example.unitask.presentation.viewmodel.RewardsViewModel
+import com.example.unitask.domain.usecase.ScheduleAlarmUseCase
+import com.example.unitask.domain.usecase.CancelAlarmUseCase
+import com.example.unitask.domain.usecase.AwardXpUseCase
+import com.example.unitask.domain.usecase.GetXpUseCase
 import java.time.LocalDateTime
 
 /**
@@ -75,6 +77,26 @@ object AppModule {
                 getUrgentTasksUseCase = getUrgentTasksUseCase,
                 getSubjectsUseCase = getSubjectsUseCase,
                 completeTaskUseCase = completeTaskUseCase
+            )
+        }
+        initializer {
+            // AlarmViewModel wiring
+            val notificationRepo = provideNotificationRepository()
+            val scheduleUseCase = ScheduleAlarmUseCase(notificationRepo)
+            val cancelUseCase = CancelAlarmUseCase(notificationRepo)
+            AlarmViewModel(
+                scheduleUseCase = scheduleUseCase,
+                cancelUseCase = cancelUseCase
+            )
+        }
+        initializer {
+            // RewardsViewModel wiring
+            val rewardRepo = provideRewardRepository()
+            val awardXpUseCase = AwardXpUseCase(rewardRepo)
+            val getXpUseCase = GetXpUseCase(rewardRepo)
+            RewardsViewModel(
+                awardXpUseCase = awardXpUseCase,
+                getXpUseCase = getXpUseCase
             )
         }
         initializer {

@@ -25,7 +25,7 @@ class SharedPrefsNotificationRepository(private val context: Context, private va
                 val o = arr.getJSONObject(i)
                 NotificationSetting(
                     id = o.getString("id"),
-                    taskId = o.optString("taskId", null),
+                    taskId = if (o.isNull("taskId")) null else o.getString("taskId"),
                     enabled = o.getBoolean("enabled"),
                     triggerAtMillis = o.getLong("triggerAtMillis"),
                     repeatIntervalMillis = if (o.isNull("repeatIntervalMillis")) null else o.getLong("repeatIntervalMillis"),

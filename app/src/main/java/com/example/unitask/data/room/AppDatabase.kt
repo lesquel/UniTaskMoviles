@@ -1,10 +1,8 @@
 package com.example.unitask.data.room
 
-import androidx.room.Database
-import androidx.room.RoomDatabase
+// Placeholder: Room was removed in favor of SharedPreferences-backed repositories.
+// This file remains as a no-op placeholder to avoid build failures while
+// the migration completes. It is safe to delete once all code references
+// to Room are removed.
 
-@Database(entities = [NotificationEntity::class, RewardEntity::class], version = 1)
-abstract class AppDatabase : RoomDatabase() {
-    abstract fun notificationDao(): NotificationDao
-    abstract fun rewardDao(): RewardDao
-}
+object AppDatabasePlaceholder

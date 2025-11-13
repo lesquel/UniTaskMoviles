@@ -1,15 +1,12 @@
 package com.example.unitask.data.room
 
-import androidx.room.Entity
-import androidx.room.PrimaryKey
-
-@Entity(tableName = "notifications")
-data class NotificationEntity(
-    @PrimaryKey val id: String,
-    val taskId: String?,
-    val enabled: Boolean,
-    val triggerAtMillis: Long,
-    val repeatIntervalMillis: Long?,
-    val useMinutes: Boolean,
-    val exact: Boolean
+// Placeholder for NotificationEntity. Persistence now uses SharedPreferences.
+data class NotificationEntityPlaceholder(
+    val id: String = "",
+    val taskId: String? = null,
+    val enabled: Boolean = false,
+    val triggerAtMillis: Long = 0L,
+    val repeatIntervalMillis: Long? = null,
+    val useMinutes: Boolean = false,
+    val exact: Boolean = false
 )
