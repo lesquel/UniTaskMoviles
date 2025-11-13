@@ -7,7 +7,18 @@ import kotlinx.coroutines.flow.Flow
 
 class RoomRewardRepository(private val dao: RewardDao) : RewardRepository {
     override suspend fun addXp(amount: Int) {
-        // Simple upsert logic should be implemented: read current, add xp, compute level, persist
+        val current = dao.getReward()
+        val now = System.currentTimeMillis()
+        val (baseXp, baseLevel) = if (current == null) Pair(0, 1) else Pair(current.xp, current.level)
+        var newXp = baseXp + amount
+        var newLevel = baseLevel
+        // Level requirement: level * 100 XP
+        while (newXp >= newLevel * 100) {
+            newXp -= newLevel * 100
+            newLevel += 1
+        }
+        val entity = RewardEntity(id = 0, xp = newXp, level = newLevel, lastAwardedAt = now)
+        dao.upsert(entity)
     }
 
     override fun getXp(): Flow<Int> = dao.getXp()

@@ -14,6 +14,9 @@ interface RewardDao {
     @Query("SELECT level FROM reward LIMIT 1")
     fun getLevel(): Flow<Int>
 
+    @Query("SELECT * FROM reward LIMIT 1")
+    suspend fun getReward(): RewardEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(entity: RewardEntity)
 }

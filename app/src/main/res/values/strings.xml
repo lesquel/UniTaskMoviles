@@ -43,4 +43,22 @@
     <string name="delete_label">Eliminar</string>
     <string name="no_subjects_message">Aún no tienes asignaturas</string>
     <string name="add_subject_prompt">Añade una para organizar tus tareas</string>
+    <!-- Alarmas y Recompensas -->
+    <string name="notification_channel_reminder_name">Recordatorios</string>
+    <string name="notification_channel_reminder_desc">Notificaciones para tareas programadas</string>
+    <string name="notification_channel_reward_name">Recompensas</string>
+    <string name="notification_channel_reward_desc">Notificaciones cuando ganas XP o subes de nivel</string>
+    <string name="alarm_settings_title">Ajustes de recordatorio</string>
+    <string name="alarm_enable_label">Activar recordatorio</string>
+    <string name="alarm_repeat_label">Repetir cada</string>
+    <string name="alarm_unit_minutes">Minutos</string>
+    <string name="alarm_unit_hours">Horas</string>
+    <string name="alarm_exact_label">Alarma exacta (puede requerir permiso)</string>
+    <string name="request_notifications_permission_rationale">La app necesita permiso para mostrar recordatorios.</string>
+    <string name="request_exact_alarm_rationale">Permitir alarmas exactas para recordatorios puntuales.</string>
+    <string name="rewards_title">Recompensas</string>
+    <string name="rewards_xp_label">XP: %1$d</string>
+    <string name="rewards_level_label">Nivel %1$d</string>
+    <string name="rewards_earn_button">Ganar XP</string>
+    <string name="rewards_reset_button">Reiniciar XP</string>
 </resources>

@@ -6,10 +6,24 @@ import com.example.unitask.domain.model.NotificationSetting
 import com.example.unitask.domain.repository.NotificationRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import com.example.unitask.notifications.AlarmScheduler
+import android.content.Intent
+import android.app.PendingIntent
+import android.content.Context
+import com.example.unitask.notifications.AlarmReceiver
 
-class RoomNotificationRepository(private val dao: NotificationDao) : NotificationRepository {
+class RoomNotificationRepository(private val dao: NotificationDao, private val alarmScheduler: AlarmScheduler, private val context: Context) : NotificationRepository {
     override suspend fun save(setting: NotificationSetting) {
         dao.insert(setting.toEntity())
+        if (setting.enabled) {
+            // schedule immediately when saved
+            val intent = Intent(context, AlarmReceiver::class.java).apply {
+                putExtra("alarm_id", setting.id)
+                putExtra("task_id", setting.taskId)
+            }
+            val pending = PendingIntent.getBroadcast(context, setting.id.hashCode(), intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+            alarmScheduler.scheduleExact(setting.id, setting.triggerAtMillis, setting.repeatIntervalMillis, pending)
+        }
     }
 
     override suspend fun delete(id: String) {
@@ -21,11 +35,18 @@ class RoomNotificationRepository(private val dao: NotificationDao) : Notificatio
     override fun observeAll(): Flow<List<NotificationSetting>> = dao.observeAll().map { it.map { e -> e.toDomain() } }
 
     override suspend fun schedule(setting: NotificationSetting) {
-        // Implementation will delegate to AlarmScheduler in the notifications package via DI
+        val intent = Intent(context, AlarmReceiver::class.java).apply {
+            putExtra("alarm_id", setting.id)
+            putExtra("task_id", setting.taskId)
+        }
+        val pending = PendingIntent.getBroadcast(context, setting.id.hashCode(), intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        alarmScheduler.scheduleExact(setting.id, setting.triggerAtMillis, setting.repeatIntervalMillis, pending)
     }
 
     override suspend fun cancel(id: String) {
-        // Implementation will delegate to AlarmScheduler in the notifications package via DI
+        val intent = Intent(context, AlarmReceiver::class.java).apply { putExtra("alarm_id", id) }
+        val pending = PendingIntent.getBroadcast(context, id.hashCode(), intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        alarmScheduler.cancel(id, pending)
     }
 }
 

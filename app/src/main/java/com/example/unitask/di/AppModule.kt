@@ -18,6 +18,13 @@ import com.example.unitask.domain.usecase.GetAllTasksUseCase
 import com.example.unitask.domain.usecase.GetSubjectsUseCase
 import com.example.unitask.domain.usecase.GetUrgentTasksUseCase
 import com.example.unitask.presentation.viewmodel.AddTaskViewModel
+import android.content.Context
+import androidx.room.Room
+import com.example.unitask.data.room.AppDatabase
+import com.example.unitask.data.repository.RoomNotificationRepository
+import com.example.unitask.data.repository.RoomRewardRepository
+import com.example.unitask.domain.repository.NotificationRepository
+import com.example.unitask.domain.repository.RewardRepository
 import com.example.unitask.presentation.viewmodel.DashboardViewModel
 import com.example.unitask.presentation.viewmodel.SubjectsViewModel
 import java.time.LocalDateTime
@@ -85,5 +92,28 @@ object AppModule {
                 deleteSubjectUseCase = deleteSubjectUseCase
             )
         }
+    }
+
+    // App wiring for alarms & rewards. Call `AppModule.configureAppModule(context)` at startup.
+    private var _alarmScheduler: com.example.unitask.notifications.AlarmScheduler? = null
+    private var _appContext: Context? = null
+
+    fun configureAppModule(context: Context) {
+        _appContext = context.applicationContext
+        if (_alarmScheduler == null) {
+            val am = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+            _alarmScheduler = com.example.unitask.notifications.AlarmScheduler(context.applicationContext, am)
+        }
+    }
+
+    fun provideNotificationRepository(): NotificationRepository {
+        val scheduler = _alarmScheduler ?: throw IllegalStateException("AppModule not configured: call configureAppModule(context)")
+        val ctx = _appContext ?: throw IllegalStateException("AppModule context not set")
+        return com.example.unitask.data.repository.SharedPrefsNotificationRepository(ctx, scheduler)
+    }
+
+    fun provideRewardRepository(): RewardRepository {
+        val ctx = _appContext ?: throw IllegalStateException("AppModule context not set")
+        return com.example.unitask.data.repository.SharedPrefsRewardRepository(ctx)
     }
 }
