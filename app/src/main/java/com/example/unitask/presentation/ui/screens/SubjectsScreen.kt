@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.animateItemPlacement
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -31,6 +32,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -83,7 +85,7 @@ fun SubjectsRoute(
     SubjectsScreen(
         state = state,
         snackbarHostState = snackbarHostState,
-        onBack = onBack,
+            import androidx.compose.animation.animateContentSize
         onAddClick = { dialogState = SubjectDialogState() },
         onEdit = { subject ->
             dialogState = SubjectDialogState(
@@ -251,7 +253,7 @@ private data class SubjectDialogState(
     val teacher: String = ""
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
+                                    modifier = Modifier.animateContentSize()
 @Composable
 private fun SubjectDialog(
     state: SubjectDialogState,
