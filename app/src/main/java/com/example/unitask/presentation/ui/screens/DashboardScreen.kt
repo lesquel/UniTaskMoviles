@@ -46,11 +46,15 @@ import com.example.unitask.presentation.ui.components.EmptyState
 import com.example.unitask.presentation.ui.components.TaskCard
 import com.example.unitask.presentation.viewmodel.DashboardUiState
 import com.example.unitask.presentation.viewmodel.DashboardViewModel
+import com.example.unitask.presentation.viewmodel.RewardsViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.unitask.di.AppModule
 import com.example.unitask.presentation.viewmodel.TaskUiModel
 
 @Composable
 fun DashboardRoute(
     viewModel: DashboardViewModel = viewModel(factory = AppModule.viewModelFactory),
+    rewardsViewModel: RewardsViewModel = viewModel(factory = AppModule.viewModelFactory),
     onAddTaskClick: () -> Unit = {},
     onManageSubjectsClick: () -> Unit = {},
     isDarkTheme: Boolean = false,
@@ -73,6 +77,7 @@ fun DashboardRoute(
         onAddTaskClick = onAddTaskClick,
         onManageSubjectsClick = onManageSubjectsClick,
         onTaskCompleted = viewModel::onTaskCompleted,
+        rewardsViewModel = rewardsViewModel,
         isDarkTheme = isDarkTheme,
         onToggleTheme = onToggleTheme
     )
@@ -86,6 +91,7 @@ fun DashboardScreen(
     onAddTaskClick: () -> Unit,
     onManageSubjectsClick: () -> Unit,
     onTaskCompleted: (String) -> Unit,
+    rewardsViewModel: RewardsViewModel,
     isDarkTheme: Boolean = false,
     onToggleTheme: () -> Unit = {}
 ) {
@@ -127,6 +133,13 @@ fun DashboardScreen(
         ) {
             item {
                 UrgentTasksSection(tasks = state.urgentTasks, onTaskCompleted = onTaskCompleted)
+            }
+            item {
+                // Reward bar showing XP and level
+                val xp by rewardsViewModel.xp.collectAsState()
+                val level by rewardsViewModel.getXpUseCase().invoke().collectAsState(initial = 1)
+                val progress = (xp % (maxOf(1, level * 100))).toFloat() / (level * 100).toFloat()
+                com.example.unitask.presentation.ui.components.RewardsBar(xp = xp, level = level, progressFraction = progress)
             }
             item {
                 Text(

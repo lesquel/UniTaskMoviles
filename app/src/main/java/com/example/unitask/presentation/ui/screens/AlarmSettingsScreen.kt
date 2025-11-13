@@ -8,10 +8,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.unitask.di.AppModule
 import com.example.unitask.presentation.viewmodel.AlarmViewModel
 
 @Composable
-fun AlarmSettingsScreen(viewModel: AlarmViewModel, onBack: () -> Unit) {
+fun AlarmSettingsScreen(viewModel: AlarmViewModel = viewModel(factory = AppModule.viewModelFactory), onBack: () -> Unit) {
     // TODO: implement UI to list, create and edit alarm settings
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Text(text = "Alarm Settings - TODO")

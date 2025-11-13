@@ -13,6 +13,6 @@ import androidx.compose.ui.unit.dp
 fun RewardsBar(xp: Int, level: Int, progressFraction: Float) {
     Column(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
         Text(text = "Nivel $level — XP: $xp")
-        LinearProgressIndicator(progress = progressFraction)
+        LinearProgressIndicator(progress = { progressFraction })
     }
 }
