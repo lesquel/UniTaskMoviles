@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.ui.res.stringResource
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Brightness4
@@ -97,11 +98,11 @@ fun DashboardScreen(
                     IconButton(onClick = onToggleTheme) {
                         Icon(
                             imageVector = if (isDarkTheme) Icons.Default.Brightness7 else Icons.Default.Brightness4,
-                            contentDescription = "Cambiar tema"
+                            contentDescription = stringResource(id = com.example.unitask.R.string.change_theme)
                         )
                     }
                     IconButton(onClick = onManageSubjectsClick) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.List, contentDescription = "Gestionar asignaturas")
+                        Icon(imageVector = Icons.AutoMirrored.Filled.List, contentDescription = stringResource(id = com.example.unitask.R.string.manage_subjects))
                     }
                 }
             )
@@ -112,7 +113,7 @@ fun DashboardScreen(
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "Añadir tarea")
+                Icon(imageVector = Icons.Default.Add, contentDescription = stringResource(id = com.example.unitask.R.string.add_task))
             }
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }

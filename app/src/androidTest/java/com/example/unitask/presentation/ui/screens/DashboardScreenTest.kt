@@ -29,7 +29,7 @@ class DashboardScreenTest {
             )
         }
 
-        composeRule.onNodeWithText("No hay tareas pendientes. Disfruta tu tiempo libre!").assertIsDisplayed()
+        composeRule.onNodeWithText(composeTestRule.activity.getString(com.example.unitask.R.string.no_tasks_message)).assertIsDisplayed()
     }
 
     @Test

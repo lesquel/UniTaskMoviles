@@ -15,9 +15,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 
 @Composable
-fun EmptyState(modifier: Modifier = Modifier, title: String = "No hay tareas pendientes. Disfruta tu tiempo libre!") {
+fun EmptyState(modifier: Modifier = Modifier, titleResId: Int = com.example.unitask.R.string.no_tasks_message) {
+    val title = stringResource(id = titleResId)
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -40,7 +42,9 @@ fun EmptyState(modifier: Modifier = Modifier, title: String = "No hay tareas pen
 }
 
 @Composable
-fun EmptySubjectsState(modifier: Modifier = Modifier, title: String = "Aún no tienes asignaturas", description: String = "Añade una para organizar tus tareas") {
+fun EmptySubjectsState(modifier: Modifier = Modifier, titleResId: Int = com.example.unitask.R.string.subjects_title, descriptionResId: Int = com.example.unitask.R.string.no_tasks_message) {
+    val title = stringResource(id = titleResId)
+    val description = stringResource(id = descriptionResId)
     Column(
         modifier = modifier
             .fillMaxSize()

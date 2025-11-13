@@ -1,3 +1,21 @@
 <resources>
     <string name="app_name">UniTask</string>
+    <string name="title_unittask">UniTask</string>
+    <string name="manage_subjects">Gestionar asignaturas</string>
+    <string name="add_task">Añadir tarea</string>
+    <string name="all_tasks">Todas las tareas</string>
+    <string name="urgent">Urgente</string>
+    <string name="no_tasks_message">No hay tareas pendientes. Disfruta tu tiempo libre!</string>
+    <string name="subjects_title">Asignaturas</string>
+    <string name="add_subject">Añadir asignatura</string>
+    <string name="edit_subject">Editar asignatura</string>
+    <string name="delete_subject_confirm">¿Eliminar %1$s? Se eliminarán sus tareas asociadas.</string>
+    <string name="save">Guardar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="change_theme">Cambiar tema</string>
+    <string name="back">Volver</string>
+    <string name="edit">Editar</string>
+    <string name="delete">Eliminar</string>
+    <string name="complete_task">Completar tarea</string>
+    
 </resources>

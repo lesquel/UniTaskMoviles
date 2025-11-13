@@ -23,6 +23,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -63,10 +66,14 @@ fun TaskCard(
             Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
                 if (!task.isCompleted) {
                     IconButton(onClick = { onTaskCompleted(task.id) }) {
-                        Icon(imageVector = Icons.Default.Check, contentDescription = "Completar tarea")
+                        Icon(imageVector = Icons.Default.Check, contentDescription = stringResource(id = com.example.unitask.R.string.complete_task))
                     }
                 } else {
-                    Checkbox(checked = true, onCheckedChange = null)
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = stringResource(id = com.example.unitask.R.string.complete_task),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
         }
