@@ -27,8 +27,10 @@ import com.example.unitask.presentation.viewmodel.AlarmViewModel
 import com.example.unitask.presentation.viewmodel.RewardsViewModel
 import com.example.unitask.domain.usecase.ScheduleAlarmUseCase
 import com.example.unitask.domain.usecase.CancelAlarmUseCase
+import com.example.unitask.domain.usecase.GetAllNotificationsUseCase
 import com.example.unitask.domain.usecase.AwardXpUseCase
 import com.example.unitask.domain.usecase.GetXpUseCase
+import com.example.unitask.domain.usecase.GetLevelUseCase
 import java.time.LocalDateTime
 
 /**
@@ -84,9 +86,11 @@ object AppModule {
             val notificationRepo = provideNotificationRepository()
             val scheduleUseCase = ScheduleAlarmUseCase(notificationRepo)
             val cancelUseCase = CancelAlarmUseCase(notificationRepo)
+            val getAllUseCase = GetAllNotificationsUseCase(notificationRepo)
             AlarmViewModel(
                 scheduleUseCase = scheduleUseCase,
-                cancelUseCase = cancelUseCase
+                cancelUseCase = cancelUseCase,
+                getAllNotificationsUseCase = getAllUseCase
             )
         }
         initializer {
@@ -94,9 +98,11 @@ object AppModule {
             val rewardRepo = provideRewardRepository()
             val awardXpUseCase = AwardXpUseCase(rewardRepo)
             val getXpUseCase = GetXpUseCase(rewardRepo)
+            val getLevelUseCase = GetLevelUseCase(rewardRepo)
             RewardsViewModel(
                 awardXpUseCase = awardXpUseCase,
-                getXpUseCase = getXpUseCase
+                getXpUseCase = getXpUseCase,
+                getLevelUseCase = getLevelUseCase
             )
         }
         initializer {

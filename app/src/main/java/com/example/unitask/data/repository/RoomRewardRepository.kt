@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
 // In-memory placeholder implementation to replace the old Room-backed repository.
-class RoomRewardRepository : RewardRepository {
+class InMemoryRewardRepository : RewardRepository {
     private val xpFlow = MutableStateFlow(0)
     private val levelFlow = MutableStateFlow(1)
 

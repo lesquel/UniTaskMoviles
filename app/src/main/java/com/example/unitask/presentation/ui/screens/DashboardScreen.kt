@@ -47,8 +47,7 @@ import com.example.unitask.presentation.ui.components.TaskCard
 import com.example.unitask.presentation.viewmodel.DashboardUiState
 import com.example.unitask.presentation.viewmodel.DashboardViewModel
 import com.example.unitask.presentation.viewmodel.RewardsViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.unitask.di.AppModule
+// (imports cleaned)
 import com.example.unitask.presentation.viewmodel.TaskUiModel
 
 @Composable
@@ -135,11 +134,11 @@ fun DashboardScreen(
                 UrgentTasksSection(tasks = state.urgentTasks, onTaskCompleted = onTaskCompleted)
             }
             item {
-                // Reward bar showing XP and level
-                val xp by rewardsViewModel.xp.collectAsState()
-                val level by rewardsViewModel.getXpUseCase().invoke().collectAsState(initial = 1)
-                val progress = (xp % (maxOf(1, level * 100))).toFloat() / (level * 100).toFloat()
-                com.example.unitask.presentation.ui.components.RewardsBar(xp = xp, level = level, progressFraction = progress)
+                    // Reward bar showing XP and level
+                    val xp by rewardsViewModel.xp.collectAsState()
+                    val level by rewardsViewModel.level.collectAsState(initial = 1)
+                    val progress = (xp % (maxOf(1, level * 100))).toFloat() / (level * 100).toFloat()
+                    com.example.unitask.presentation.ui.components.RewardsBar(xp = xp, level = level, progressFraction = progress)
             }
             item {
                 Text(
