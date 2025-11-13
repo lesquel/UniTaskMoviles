@@ -32,14 +32,10 @@
     <string name="time_label">Hora de entrega</string>
 
     <!-- Dashboard -->
-    <string name="title_unittask">UniTask</string>
-    <string name="all_tasks">Todas las tareas</string>
-    <string name="urgent">Urgente</string>
     <string name="no_deliveries_48h">Sin entregas en las próximas 48 horas</string>
 
     <!-- Subjects / Dialogs -->
     <string name="new_subject">Nueva asignatura</string>
-    <string name="edit_subject">Editar asignatura</string>
     <string name="name_label">Nombre</string>
     <string name="color_label">Color (hex)</string>
     <string name="teacher_label">Profesor/a (opcional)</string>

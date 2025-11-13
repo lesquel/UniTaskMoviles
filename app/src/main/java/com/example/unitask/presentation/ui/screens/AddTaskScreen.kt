@@ -66,13 +66,14 @@ fun AddTaskRoute(
 ) {
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
                 is AddTaskEvent.Success -> {
                         snackbarHostState.showSnackbar(
-                            message = stringResource(id = com.example.unitask.R.string.task_created),
+                            message = context.getString(com.example.unitask.R.string.task_created),
                             duration = SnackbarDuration.Short
                         )
                     onTaskSaved()
