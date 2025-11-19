@@ -1,10 +1,13 @@
 package com.example.unitask.data.repository
 
 import android.content.Context
+import android.app.AlarmManager
 import androidx.test.core.app.ApplicationProvider
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import com.example.unitask.domain.model.NotificationSetting
+import com.example.unitask.notifications.AlarmScheduler
+import com.example.unitask.notifications.RealAlarmManagerWrapper
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
@@ -16,7 +19,9 @@ class SharedPrefsNotificationRepositoryTest {
 
     @Test
     fun saveAndGetObservation() = runBlocking {
-        val alarmScheduler = com.example.unitask.notifications.AlarmScheduler(context, context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager)
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val wrapper = RealAlarmManagerWrapper(alarmManager)
+        val alarmScheduler = AlarmScheduler(wrapper)
         val repo = SharedPrefsNotificationRepository(context, alarmScheduler)
         // Clear
         repo.observeAll().first().forEach { repo.delete(it.id) }

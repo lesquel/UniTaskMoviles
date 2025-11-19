@@ -1,14 +1,13 @@
 package com.example.unitask.notifications
 
 import android.app.PendingIntent
-import android.content.Context
 import android.os.Build
 import kotlin.math.max
 
 /**
  * Use an AlarmManagerWrapper to allow tests to inject a fake.
  */
-class AlarmScheduler(private val context: Context, private val alarmManagerWrapper: AlarmManagerWrapper) {
+class AlarmScheduler(private val alarmManagerWrapper: AlarmManagerWrapper) {
     fun scheduleExact(id: String, triggerAtMillis: Long, repeatIntervalMillis: Long?, intent: PendingIntent) {
         if (repeatIntervalMillis == null) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.unitask.domain.model.Subject
 import com.example.unitask.domain.model.Task
+import com.example.unitask.domain.usecase.AwardXpUseCase
 import com.example.unitask.domain.usecase.CompleteTaskUseCase
 import com.example.unitask.domain.usecase.GetAllTasksUseCase
 import com.example.unitask.domain.usecase.GetSubjectsUseCase
@@ -22,7 +23,8 @@ class DashboardViewModel(
     private val getAllTasksUseCase: GetAllTasksUseCase,
     private val getUrgentTasksUseCase: GetUrgentTasksUseCase,
     private val getSubjectsUseCase: GetSubjectsUseCase,
-    private val completeTaskUseCase: CompleteTaskUseCase
+    private val completeTaskUseCase: CompleteTaskUseCase,
+    private val awardXpUseCase: AwardXpUseCase
 ) : ViewModel() {
 
     private val formatter = DateTimeFormatter.ofPattern("dd MMM HH:mm", Locale.getDefault())
@@ -37,6 +39,9 @@ class DashboardViewModel(
     fun onTaskCompleted(taskId: String) {
         viewModelScope.launch {
             runCatching { completeTaskUseCase(taskId) }
+                .onSuccess {
+                    awardXpUseCase(25)
+                }
                 .onFailure { error ->
                     _uiState.update { it.copy(errorMessage = error.message) }
                 }
