@@ -108,9 +108,9 @@ object AppModule {
             val cancelUseCase = CancelAlarmUseCase(notificationRepo)
             val getAllNotificationsUseCase = GetAllNotificationsUseCase(notificationRepo)
             AlarmViewModel(
-                scheduleUseCase = scheduleUseCase,
-                cancelUseCase = cancelUseCase,
-                getAllNotificationsUseCase = getAllNotificationsUseCase
+                scheduleUseCase,
+                cancelUseCase,
+                getAllNotificationsUseCase
             )
         }
         initializer {
