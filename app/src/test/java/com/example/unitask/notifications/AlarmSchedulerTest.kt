@@ -3,14 +3,17 @@ package com.example.unitask.notifications
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
+@Config(sdk = [Build.VERSION_CODES.S])
 class AlarmSchedulerTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val wrapper = FakeAlarmManagerWrapper()
