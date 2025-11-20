@@ -25,6 +25,12 @@
     <string name="title_label">Título</string>
     <string name="saving">Guardando...</string>
     <string name="save_task">Guardar tarea</string>
+    <string name="configure_alarms">Configurar alarmas</string>
+    <string name="alarm_summary_none">Sin recordatorios</string>
+    <string name="alarm_summary_next">Próximo: %1$s</string>
+    <string name="alarm_summary_count">%1$d recordatorio(s)</string>
+    <string name="alarm_settings_action">Abrir recordatorios</string>
+    <string name="alarm_linked_task_note">Esta vista abre los recordatorios para la tarea seleccionada.</string>
     <string name="subject_label">Asignatura</string>
     <string name="add_subject_hint">Añade una asignatura desde la sección de gestión.</string>
     <string name="select_subject_placeholder">Selecciona asignatura</string>

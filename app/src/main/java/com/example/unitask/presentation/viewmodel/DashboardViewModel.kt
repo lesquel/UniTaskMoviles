@@ -2,10 +2,12 @@ package com.example.unitask.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.unitask.domain.model.NotificationSetting
 import com.example.unitask.domain.model.Subject
 import com.example.unitask.domain.model.Task
 import com.example.unitask.domain.usecase.AwardXpUseCase
 import com.example.unitask.domain.usecase.CompleteTaskUseCase
+import com.example.unitask.domain.usecase.GetAllNotificationsUseCase
 import com.example.unitask.domain.usecase.GetAllTasksUseCase
 import com.example.unitask.domain.usecase.GetSubjectsUseCase
 import com.example.unitask.domain.usecase.GetUrgentTasksUseCase
@@ -23,6 +25,7 @@ class DashboardViewModel(
     private val getAllTasksUseCase: GetAllTasksUseCase,
     private val getUrgentTasksUseCase: GetUrgentTasksUseCase,
     private val getSubjectsUseCase: GetSubjectsUseCase,
+    private val getAllNotificationsUseCase: GetAllNotificationsUseCase,
     private val completeTaskUseCase: CompleteTaskUseCase,
     private val awardXpUseCase: AwardXpUseCase
 ) : ViewModel() {
@@ -57,11 +60,13 @@ class DashboardViewModel(
             combine(
                 getUrgentTasksUseCase(),
                 getAllTasksUseCase(),
-                getSubjectsUseCase()
-            ) { urgent, all, subjects ->
+                getSubjectsUseCase(),
+                getAllNotificationsUseCase()
+            ) { urgent, all, subjects, notifications ->
+                val grouped = notifications.groupBy { it.taskId }
                 DashboardUiState(
-                    urgentTasks = urgent.map { it.toUiModel(subjects) },
-                    allTasks = all.map { it.toUiModel(subjects) },
+                    urgentTasks = urgent.map { it.toUiModel(subjects, grouped[it.id]) },
+                    allTasks = all.map { it.toUiModel(subjects, grouped[it.id]) },
                     isLoading = false,
                     errorMessage = null
                 )
@@ -75,16 +80,23 @@ class DashboardViewModel(
         }
     }
 
-    private fun Task.toUiModel(subjects: List<Subject>): TaskUiModel {
+    private fun Task.toUiModel(subjects: List<Subject>, notifications: List<NotificationSetting>?): TaskUiModel {
         val subject = subjects.find { it.id == subjectId }
         val subjectName = subject?.name ?: "Sin asignatura"
         val subjectColor = subject?.colorHex ?: "#757575"
+        val sortedNotifications = notifications.orEmpty()
+            .filter { it.enabled }
+            .sortedBy { it.triggerAtMillis }
+        val nextAlarmAt = sortedNotifications.firstOrNull()?.triggerAtMillis
+        val alarmCount = sortedNotifications.size
         return TaskUiModel(
             id = id,
             title = title,
             subjectName = subjectName,
             subjectColorHex = subjectColor,
             dueFormatted = formatter.format(dueDateTime),
+            nextAlarmAtMillis = nextAlarmAt,
+            alarmCount = alarmCount,
             isCompleted = isCompleted
         )
     }
@@ -103,5 +115,7 @@ data class TaskUiModel(
     val subjectName: String,
     val subjectColorHex: String,
     val dueFormatted: String,
-    val isCompleted: Boolean
+    val isCompleted: Boolean,
+    val nextAlarmAtMillis: Long? = null,
+    val alarmCount: Int = 0
 )

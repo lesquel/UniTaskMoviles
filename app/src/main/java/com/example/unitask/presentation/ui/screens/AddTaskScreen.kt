@@ -5,6 +5,7 @@ import android.app.TimePickerDialog
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,6 +32,7 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.ui.res.stringResource
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -62,7 +64,8 @@ import java.util.Locale
 fun AddTaskRoute(
     viewModel: AddTaskViewModel = viewModel(factory = AppModule.viewModelFactory),
     onBack: () -> Unit,
-    onTaskSaved: () -> Unit = onBack
+    onTaskSaved: () -> Unit = onBack,
+    onAlarmSettingsClick: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -96,7 +99,8 @@ fun AddTaskRoute(
         onSubjectSelected = viewModel::onSubjectSelected,
         onDateSelected = viewModel::onDateSelected,
         onTimeSelected = viewModel::onTimeSelected,
-        onSubmit = viewModel::submit
+        onSubmit = viewModel::submit,
+        onAlarmSettingsClick = onAlarmSettingsClick
     )
 }
 
@@ -110,7 +114,8 @@ fun AddTaskScreen(
     onSubjectSelected: (String) -> Unit,
     onDateSelected: (LocalDate) -> Unit,
     onTimeSelected: (LocalTime) -> Unit,
-    onSubmit: () -> Unit
+    onSubmit: () -> Unit,
+    onAlarmSettingsClick: () -> Unit
 ) {
     val context = LocalContext.current
     val dateFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.getDefault()) }
@@ -182,12 +187,20 @@ fun AddTaskScreen(
                 Text(text = error, color = MaterialTheme.colorScheme.error)
             }
             Spacer(modifier = Modifier.height(16.dp))
-            Button(
-                onClick = onSubmit,
-                enabled = !state.isSubmitting && state.subjects.isNotEmpty(),
-                modifier = Modifier.align(Alignment.End)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = if (state.isSubmitting) stringResource(id = com.example.unitask.R.string.saving) else stringResource(id = com.example.unitask.R.string.save_task))
+                TextButton(onClick = onAlarmSettingsClick) {
+                    Text(text = stringResource(id = com.example.unitask.R.string.configure_alarms))
+                }
+                Button(
+                    onClick = onSubmit,
+                    enabled = !state.isSubmitting && state.subjects.isNotEmpty()
+                ) {
+                    Text(text = if (state.isSubmitting) stringResource(id = com.example.unitask.R.string.saving) else stringResource(id = com.example.unitask.R.string.save_task))
+                }
             }
         }
     }

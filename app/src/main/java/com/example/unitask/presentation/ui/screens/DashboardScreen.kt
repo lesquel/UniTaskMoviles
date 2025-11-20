@@ -56,6 +56,7 @@ fun DashboardRoute(
     rewardsViewModel: RewardsViewModel = viewModel(factory = AppModule.viewModelFactory),
     onAddTaskClick: () -> Unit = {},
     onManageSubjectsClick: () -> Unit = {},
+    onAlarmSettingsClick: (String) -> Unit = {},
     isDarkTheme: Boolean = false,
     onToggleTheme: () -> Unit = {}
 ) {
@@ -70,16 +71,17 @@ fun DashboardRoute(
         }
     }
 
-    DashboardScreen(
-        state = state,
-        snackbarHostState = snackbarHostState,
-        onAddTaskClick = onAddTaskClick,
-        onManageSubjectsClick = onManageSubjectsClick,
-        onTaskCompleted = viewModel::onTaskCompleted,
-        rewardsViewModel = rewardsViewModel,
-        isDarkTheme = isDarkTheme,
-        onToggleTheme = onToggleTheme
-    )
+        DashboardScreen(
+            state = state,
+            snackbarHostState = snackbarHostState,
+            onAddTaskClick = onAddTaskClick,
+            onManageSubjectsClick = onManageSubjectsClick,
+            onAlarmSettingsClick = onAlarmSettingsClick,
+            onTaskCompleted = viewModel::onTaskCompleted,
+            rewardsViewModel = rewardsViewModel,
+            isDarkTheme = isDarkTheme,
+            onToggleTheme = onToggleTheme
+        )
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -89,6 +91,7 @@ fun DashboardScreen(
     snackbarHostState: SnackbarHostState,
     onAddTaskClick: () -> Unit,
     onManageSubjectsClick: () -> Unit,
+    onAlarmSettingsClick: (String) -> Unit,
     onTaskCompleted: (String) -> Unit,
     rewardsViewModel: RewardsViewModel,
     isDarkTheme: Boolean = false,
@@ -131,7 +134,11 @@ fun DashboardScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                UrgentTasksSection(tasks = state.urgentTasks, onTaskCompleted = onTaskCompleted)
+                UrgentTasksSection(
+                    tasks = state.urgentTasks,
+                    onTaskCompleted = onTaskCompleted,
+                    onAlarmSettingsClick = onAlarmSettingsClick
+                )
             }
             item {
                     // Reward bar showing XP and level
@@ -156,6 +163,7 @@ fun DashboardScreen(
                     TaskCard(
                         task = task,
                         onTaskCompleted = onTaskCompleted,
+                        onAlarmSettingsClick = onAlarmSettingsClick,
                         modifier = Modifier
                             .fillMaxWidth()
                             .animateContentSize()
@@ -170,7 +178,8 @@ fun DashboardScreen(
 @Composable
 private fun UrgentTasksSection(
     tasks: List<TaskUiModel>,
-    onTaskCompleted: (String) -> Unit
+    onTaskCompleted: (String) -> Unit,
+    onAlarmSettingsClick: (String) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
@@ -191,6 +200,7 @@ private fun UrgentTasksSection(
                     TaskCard(
                         task = task,
                         onTaskCompleted = onTaskCompleted,
+                        onAlarmSettingsClick = onAlarmSettingsClick,
                         modifier = Modifier
                             .width(260.dp)
                             .animateContentSize()

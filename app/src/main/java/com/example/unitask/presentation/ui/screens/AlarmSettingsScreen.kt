@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.RemoveCircle
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,12 +41,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.unitask.di.AppModule
 import com.example.unitask.domain.model.NotificationSetting
+import com.example.unitask.R
 import com.example.unitask.presentation.viewmodel.AlarmViewModel
 import java.time.Instant
 import java.time.ZoneId
@@ -55,10 +58,11 @@ import java.util.UUID
 @Composable
 fun AlarmSettingsScreen(
     viewModel: AlarmViewModel = viewModel(factory = AppModule.viewModelFactory),
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    initialTaskId: String? = null
 ) {
     val items by viewModel.uiState.collectAsState()
-    var showDialog by remember { mutableStateOf(false) }
+    var showDialog by remember { mutableStateOf(initialTaskId != null) }
     var editingSetting by remember { mutableStateOf<NotificationSetting?>(null) }
 
     fun openCreateDialog() {
@@ -69,6 +73,13 @@ fun AlarmSettingsScreen(
     fun openEditDialog(setting: NotificationSetting) {
         editingSetting = setting
         showDialog = true
+    }
+
+    LaunchedEffect(initialTaskId) {
+        if (initialTaskId != null) {
+            editingSetting = null
+            showDialog = true
+        }
     }
 
     Surface(modifier = Modifier.fillMaxSize()) {
@@ -87,6 +98,14 @@ fun AlarmSettingsScreen(
                 text = "Define cuándo quieres recibir una notificación antes del evento (24h, 1h, 5m o 1m).",
                 style = MaterialTheme.typography.bodyMedium
             )
+            if (initialTaskId != null) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = stringResource(id = R.string.alarm_linked_task_note),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             Spacer(modifier = Modifier.height(16.dp))
 
             LazyColumn(
@@ -139,6 +158,7 @@ fun AlarmSettingsScreen(
     if (showDialog) {
         AlarmEditDialog(
             initial = editingSetting,
+            associatedTaskId = initialTaskId,
             onDismiss = { showDialog = false },
             onSave = { setting ->
                 viewModel.schedule(setting)
@@ -203,6 +223,7 @@ private fun describeInterval(setting: NotificationSetting): String {
 @Composable
 private fun AlarmEditDialog(
     initial: NotificationSetting?,
+    associatedTaskId: String?,
     onDismiss: () -> Unit,
     onSave: (NotificationSetting) -> Unit
 ) {
@@ -232,7 +253,7 @@ private fun AlarmEditDialog(
                 val id = initial?.id ?: UUID.randomUUID().toString()
                 val setting = NotificationSetting(
                     id = id,
-                    taskId = initial?.taskId,
+                    taskId = initial?.taskId ?: associatedTaskId,
                     enabled = enabled,
                     triggerAtMillis = trigger,
                     repeatIntervalMillis = amount * unitMillis,
