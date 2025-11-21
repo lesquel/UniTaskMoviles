@@ -30,6 +30,7 @@ class FocusSensorManager(
     private val _state = MutableStateFlow(FocusSensorState())
     val state: StateFlow<FocusSensorState> = _state
 
+    // Guards that the dark/proximity notification is only shown once per activation.
     private var darkNotificationSent = false
     private var nearNotificationSent = false
     private var isListening = false
@@ -103,6 +104,7 @@ class FocusSensorManager(
         }
     }
 
+    // Enable/disable sensor sampling and reset state when alerts are turned off.
     fun setAlertsEnabled(enabled: Boolean) {
         if (alertsEnabled == enabled) return
         alertsEnabled = enabled

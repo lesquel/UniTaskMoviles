@@ -34,6 +34,7 @@ fun FocusSensorBanner(
         state.isUserPresent -> R.string.focus_banner_proximity_message
         else -> null
     }
+    // Auto-dismiss the banner after five seconds once it appears.
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(messageRes) {
         if (messageRes != null) {

@@ -26,6 +26,7 @@ fun FocusSensorSettingsDialog(
     onEnabledChange: (Boolean) -> Unit,
     onDismissRequest: () -> Unit
 ) {
+    // Dialog toggling the focus alert feature persisted by DataStore.
     AlertDialog(
         onDismissRequest = onDismissRequest,
         title = {

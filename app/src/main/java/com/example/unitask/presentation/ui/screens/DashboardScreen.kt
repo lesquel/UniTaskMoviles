@@ -83,6 +83,7 @@ fun DashboardRoute(
         }
     }
 
+        // Pass UI state, snackbar host, and focus toggle into the stateless screen.
         DashboardScreen(
             state = state,
             snackbarHostState = snackbarHostState,
@@ -117,9 +118,11 @@ fun DashboardScreen(
     isDarkTheme: Boolean = false,
     onToggleTheme: () -> Unit = {}
 ) {
+    // Show/hide the focus settings dialog when the user taps the settings icon.
     var showFocusSettingsDialog by remember { mutableStateOf(false) }
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        // Top app bar contains theme toggle, focus settings entry point, and subject manager shortcut.
         topBar = {
             TopAppBar(
                 title = { Text(text = stringResource(id = com.example.unitask.R.string.title_unittask)) },
@@ -147,6 +150,7 @@ fun DashboardScreen(
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { innerPadding ->
+        // Scrollable list mixing urgent items, rewards, and the full task list.
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -196,6 +200,7 @@ fun DashboardScreen(
         }
     }
 
+    // Dialog controlling whether focus alerts are enabled via DataStore.
     if (showFocusSettingsDialog) {
         FocusSensorSettingsDialog(
             enabled = focusAlertsEnabled,
@@ -205,6 +210,9 @@ fun DashboardScreen(
     }
 }
 
+/**
+ * Displays urgent tasks in a horizontal row; clicking a card opens the edit flow.
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun UrgentTasksSection(

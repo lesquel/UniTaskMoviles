@@ -79,6 +79,9 @@ fun UniTaskApp(
     }
 }
 
+/**
+ * Hosts the navigation graph and wires per-screen dependencies.
+ */
 @Composable
 private fun UniTaskNavHost(
     navController: NavHostController,
