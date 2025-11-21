@@ -7,6 +7,9 @@ import kotlinx.coroutines.flow.first
 class AddSubjectUseCase(
     private val subjectRepository: SubjectRepository
 ) {
+/**
+ * Registra una nueva asignatura validando su nombre.
+ */
     suspend operator fun invoke(
         name: String,
         colorHex: String,

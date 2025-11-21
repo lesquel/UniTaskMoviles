@@ -11,6 +11,9 @@ class AddTaskUseCase(
     private val subjectRepository: SubjectRepository,
     private val nowProvider: () -> LocalDateTime = { LocalDateTime.now() }
 ) {
+/**
+ * Caso de uso para crear una tarea validando que exista la asignatura referenciada.
+ */
     suspend operator fun invoke(
         title: String,
         subjectId: String,

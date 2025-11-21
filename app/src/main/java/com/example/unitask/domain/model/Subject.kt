@@ -1,5 +1,7 @@
 package com.example.unitask.domain.model
 
+// Modelo que describe una asignatura con color y docente.
+
 import java.util.UUID
 
 /**

@@ -1,5 +1,7 @@
 package com.example.unitask.domain.model
 
+// Modelo que representa la información esencial de una tarea.
+
 import java.time.LocalDateTime
 import java.util.UUID
 

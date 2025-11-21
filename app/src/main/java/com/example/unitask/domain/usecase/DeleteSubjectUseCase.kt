@@ -8,6 +8,9 @@ class DeleteSubjectUseCase(
     private val subjectRepository: SubjectRepository,
     private val taskRepository: TaskRepository
 ) {
+/**
+ * Elimina una asignatura junto con su limpieza de tareas relacionadas.
+ */
     suspend operator fun invoke(subjectId: String, cascade: Boolean = true) {
         require(subjectId.isNotBlank()) { "Subject id cannot be blank." }
 
