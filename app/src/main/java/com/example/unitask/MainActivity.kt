@@ -29,17 +29,17 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Configure the manual dependency container used by all ViewModels and repositories.
+        // Configura el contenedor manual de dependencias que usan ViewModels y repositorios.
         AppModule.configureAppModule(applicationContext)
-        // Create notification channels early so reminder/reward alerts can post right away.
+        // Prepara canales de notificación antes de que puedan dispararse alertas.
         val notificationManager = getSystemService(NotificationManager::class.java)
             ?: throw IllegalStateException("NotificationManager unavailable")
         val notificationHelper = NotificationHelper(applicationContext, notificationManager)
         notificationHelper.createChannels()
-        // Keep one FocusSensorManager alive for the lifecycle so focus alerts can run.
+        // Mantiene un FocusSensorManager vivo durante el ciclo de vida para alertas de enfoque.
         focusSensorManager = FocusSensorManager(applicationContext, notificationHelper)
 
-        // Runtime permission: POST_NOTIFICATIONS (Android 13+)
+        // Solicita permiso de notificaciones en tiempo de ejecución (Android 13+).
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val perm = Manifest.permission.POST_NOTIFICATIONS
             if (ContextCompat.checkSelfPermission(this@MainActivity, perm) != PackageManager.PERMISSION_GRANTED) {
@@ -47,17 +47,17 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        // Check exact alarm scheduling permission and open settings if needed
+        // Verifica permiso para agendar alarmas exactas y abre la pantalla de ajustes si hace falta.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val am = getSystemService(android.app.AlarmManager::class.java)
             if (am != null && !am.canScheduleExactAlarms()) {
-                // Ask user to allow exact alarms in settings
+                // Pide al usuario autorización para alarmas exactas.
                 try {
                     val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
                     intent.data = Uri.parse("package:${packageName}")
                     startActivity(intent)
                 } catch (_: Exception) {
-                    // Fallback: open app notification settings
+                    // Alternativa: abre los ajustes de notificaciones de la app.
                     val i = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
                     i.data = Uri.fromParts("package", packageName, null)
                     startActivity(i)
@@ -65,7 +65,7 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        // Extend the UI into system bars for modern edge-to-edge styling.
+        // Edge-to-edge para renderizar la UI bajo las barras del sistema.
         enableEdgeToEdge()
         setContent {
             val systemDark = isSystemInDarkTheme()

@@ -11,13 +11,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 /**
- * Exposes the latest light/proximity state so the UI can surface focused alerts.
+ * Estado combinando las lecturas de luz y proximidad para que la UI sepa si mostrar alertas.
  */
 data class FocusSensorState(
     val isDark: Boolean = false,
     val isUserPresent: Boolean = false
 )
 
+/**
+ * Gestiona los sensores de luz y proximidad para disparar notificaciones cuando el usuario debe enfocarse.
+ */
 class FocusSensorManager(
     private val context: Context,
     private val notificationHelper: NotificationHelper
@@ -30,7 +33,7 @@ class FocusSensorManager(
     private val _state = MutableStateFlow(FocusSensorState())
     val state: StateFlow<FocusSensorState> = _state
 
-    // Guards that the dark/proximity notification is only shown once per activation.
+    // Evita reentradas para que cada notificación se muestre solo una vez por activación.
     private var darkNotificationSent = false
     private var nearNotificationSent = false
     private var isListening = false
@@ -58,6 +61,9 @@ class FocusSensorManager(
         override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
     }
 
+    /**
+     * Registra los listeners si las alertas están habilitadas y aún no estamos escuchando.
+     */
     fun start() {
         if (!alertsEnabled || isListening) return
         lightSensor?.let {
@@ -69,6 +75,9 @@ class FocusSensorManager(
         isListening = true
     }
 
+    /**
+     * Anula el registro de los listeners y marca que ya no hay muestreo activo.
+     */
     fun stop() {
         if (!isListening) return
         sensorManager.unregisterListener(lightListener)
@@ -76,6 +85,9 @@ class FocusSensorManager(
         isListening = false
     }
 
+    /**
+     * Actualiza la bandera de oscuridad y dispara una notificación de enfoque solo cuando cambia.
+     */
     private fun updateDarkState(isDark: Boolean) {
         val current = _state.value
         if (current.isDark == isDark) return
@@ -90,6 +102,9 @@ class FocusSensorManager(
         }
     }
 
+    /**
+     * Actualiza la lectura de proximidad y notifica la presencia del usuario solo al entrar en rango.
+     */
     private fun updateProximityState(isNear: Boolean) {
         val current = _state.value
         if (current.isUserPresent == isNear) return
@@ -104,7 +119,7 @@ class FocusSensorManager(
         }
     }
 
-    // Enable/disable sensor sampling and reset state when alerts are turned off.
+    // Habilita/deshabilita el muestreo y reinicia el estado cuando las alertas se apagan.
     fun setAlertsEnabled(enabled: Boolean) {
         if (alertsEnabled == enabled) return
         alertsEnabled = enabled
@@ -116,12 +131,18 @@ class FocusSensorManager(
         }
     }
 
+    /**
+     * Limpia banderas y retorna el estado a valores iniciales.
+     */
     private fun resetState() {
         darkNotificationSent = false
         nearNotificationSent = false
         _state.value = FocusSensorState()
     }
 
+    /**
+     * Convoca NotificationHelper para informar que el ambiente está oscuro.
+     */
     private fun showDarkNotification() {
         notificationHelper.showReminderNotification(
             "focus-dark",
@@ -131,6 +152,9 @@ class FocusSensorManager(
         )
     }
 
+    /**
+     * Dispara un recordatorio indicando que el usuario está cerca del dispositivo.
+     */
     private fun showProximityNotification() {
         notificationHelper.showReminderNotification(
             "focus-proximity",
