@@ -62,6 +62,11 @@
     <string name="delete_label">Eliminar</string>
     <string name="no_subjects_message">Aún no tienes asignaturas</string>
     <string name="add_subject_prompt">Añade una para organizar tus tareas</string>
+    <string name="focus_alert_title">Modo concentración</string>
+    <string name="focus_notification_dark_body">El entorno está oscuro; aprovecha la calma nocturna para avanzar con tus tareas.</string>
+    <string name="focus_notification_proximity_body">Te detectamos usando el móvil. Mantén el enfoque para terminar lo que estás haciendo.</string>
+    <string name="focus_banner_dark_message">Ilumina tu enfoque: está oscuro afuera, termina las tareas mientras tengas energía.</string>
+    <string name="focus_banner_proximity_message">Parece que estás usando el móvil; aprovecha esta atención y cierra una tarea.</string>
     <!-- Alarmas y Recompensas -->
     <string name="notification_channel_reminder_name">Recordatorios</string>
     <string name="notification_channel_reminder_desc">Notificaciones para tareas programadas</string>

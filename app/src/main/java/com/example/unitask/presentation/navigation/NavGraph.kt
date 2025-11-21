@@ -1,7 +1,14 @@
 package com.example.unitask.presentation.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import android.net.Uri
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -9,10 +16,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.unitask.presentation.ui.components.FocusSensorBanner
 import com.example.unitask.presentation.ui.screens.AddTaskRoute
 import com.example.unitask.presentation.ui.screens.AlarmSettingsScreen
 import com.example.unitask.presentation.ui.screens.DashboardRoute
 import com.example.unitask.presentation.ui.screens.SubjectsRoute
+import com.example.unitask.sensors.FocusSensorManager
 
 private sealed class UniTaskDestination(val route: String) {
     object Dashboard : UniTaskDestination("dashboard")
@@ -30,15 +39,25 @@ private sealed class UniTaskDestination(val route: String) {
 fun UniTaskApp(
     modifier: Modifier = Modifier,
     isDarkTheme: Boolean,
-    onToggleTheme: () -> Unit
+    onToggleTheme: () -> Unit,
+    focusSensorManager: FocusSensorManager
 ) {
+    val focusState by focusSensorManager.state.collectAsState()
     val navController = rememberNavController()
-    UniTaskNavHost(
-        navController = navController,
-        modifier = modifier,
-        isDarkTheme = isDarkTheme,
-        onToggleTheme = onToggleTheme
-    )
+    Box(modifier = modifier.fillMaxSize()) {
+        UniTaskNavHost(
+            navController = navController,
+            modifier = Modifier.fillMaxSize(),
+            isDarkTheme = isDarkTheme,
+            onToggleTheme = onToggleTheme
+        )
+        FocusSensorBanner(
+            state = focusState,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 12.dp)
+        )
+    }
 }
 
 @Composable
