@@ -2,6 +2,7 @@ package com.example.unitask.presentation.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import android.net.Uri
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -21,7 +22,7 @@ private sealed class UniTaskDestination(val route: String) {
         const val ARG_TASK_ID = "taskId"
         val routeWithArgument: String = "$route?$ARG_TASK_ID={$ARG_TASK_ID}"
         fun createRoute(taskId: String? = null): String =
-            if (taskId.isNullOrBlank()) route else "$route?$ARG_TASK_ID=$taskId"
+            if (taskId.isNullOrBlank()) route else "$route?$ARG_TASK_ID=${Uri.encode(taskId)}"
     }
 }
 

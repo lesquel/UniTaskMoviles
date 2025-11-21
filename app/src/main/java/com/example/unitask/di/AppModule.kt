@@ -93,11 +93,14 @@ object AppModule {
     val viewModelFactory: ViewModelProvider.Factory = viewModelFactory {
         initializer {
             val rewardRepo = provideRewardRepository()
+            val notificationRepo = provideNotificationRepository()
             val awardXpUseCase = AwardXpUseCase(rewardRepo)
+            val getAllNotificationsUseCase = GetAllNotificationsUseCase(notificationRepo)
             DashboardViewModel(
                 getAllTasksUseCase = getAllTasksUseCase,
                 getUrgentTasksUseCase = getUrgentTasksUseCase,
                 getSubjectsUseCase = getSubjectsUseCase,
+                getAllNotificationsUseCase = getAllNotificationsUseCase,
                 completeTaskUseCase = completeTaskUseCase,
                 awardXpUseCase = awardXpUseCase
             )

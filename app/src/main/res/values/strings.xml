@@ -31,6 +31,16 @@
     <string name="alarm_summary_count">%1$d recordatorio(s)</string>
     <string name="alarm_settings_action">Abrir recordatorios</string>
     <string name="alarm_linked_task_note">Esta vista abre los recordatorios para la tarea seleccionada.</string>
+    <string name="alarm_intro_heading">Alarmas y recordatorios</string>
+    <string name="alarm_settings_description">Define cuántos minutos u horas antes deseas recibir un aviso.</string>
+    <string name="alarm_settings_summary_title">Tu calendario con recordatorios</string>
+    <string name="alarm_settings_summary_body">Los recordatorios sincronizados aparecen aquí y se mantienen activos hasta que los canceles.</string>
+    <string name="alarm_saved_heading">Alarmas guardadas</string>
+    <string name="alarm_empty_state">Aún no tienes recordatorios. Crea uno nuevo para comenzar.</string>
+    <string name="alarm_create_button">Crear recordatorio</string>
+    <string name="alarm_task_scope_heading">Recordatorios de esta tarea</string>
+    <string name="alarm_task_empty_state">Esta tarea aún no tiene recordatorios.</string>
+    <string name="alarm_other_heading">Otros recordatorios</string>
     <string name="subject_label">Asignatura</string>
     <string name="add_subject_hint">Añade una asignatura desde la sección de gestión.</string>
     <string name="select_subject_placeholder">Selecciona asignatura</string>
