@@ -57,6 +57,9 @@ import com.example.unitask.presentation.viewmodel.SubjectsEvent
 import com.example.unitask.presentation.viewmodel.SubjectsUiState
 import com.example.unitask.presentation.viewmodel.SubjectsViewModel
 
+/**
+ * Orquesta el flujo de la pantalla de materias (listar, editar, borrar) y gestiona los diálogos.
+ */
 @Composable
 fun SubjectsRoute(
     viewModel: SubjectsViewModel = viewModel(factory = AppModule.viewModelFactory),
@@ -128,6 +131,9 @@ fun SubjectsRoute(
     }
 }
 
+/**
+ * Layout principal que muestra materias en tarjeta y brinda acceso rápido a agregar nuevas.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SubjectsScreen(
@@ -193,6 +199,9 @@ private fun SubjectsScreen(
     }
 }
 
+/**
+ * Tarjeta que resume una materia con acción para editar y eliminar.
+ */
 @Composable
 private fun SubjectCard(
     subject: SubjectItem,
@@ -224,6 +233,9 @@ private fun SubjectCard(
     }
 }
 
+/**
+ * Círculo pequeño que pinta el color asociado a la materia.
+ */
 @Composable
 private fun SubjectColorSwatch(colorHex: String) {
     val color = runCatching { Color(android.graphics.Color.parseColor(colorHex)) }.getOrElse { MaterialTheme.colorScheme.primary }
@@ -232,6 +244,9 @@ private fun SubjectColorSwatch(colorHex: String) {
     }
 }
 
+/**
+ * Estado vacío visual que invita a crear una materia cuando no hay datos.
+ */
 @Composable
 private fun EmptySubjectsState(modifier: Modifier = Modifier) {
     Column(
@@ -251,6 +266,9 @@ private fun EmptySubjectsState(modifier: Modifier = Modifier) {
     }
 }
 
+/**
+ * Estado temporal usado por el diálogo para almacenar los campos editables.
+ */
 private data class SubjectDialogState(
     val id: String? = null,
     val name: String = "",
@@ -258,6 +276,9 @@ private data class SubjectDialogState(
     val teacher: String = ""
 )
  
+/**
+ * Diálogo reutilizable para crear o editar una materia, validando nombre y color.
+ */
 @Composable
 private fun SubjectDialog(
     state: SubjectDialogState,
@@ -321,6 +342,9 @@ private fun SubjectDialog(
     )
 }
 
+/**
+ * Confirma la eliminación de una materia con texto contextual.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ConfirmDeleteDialog(

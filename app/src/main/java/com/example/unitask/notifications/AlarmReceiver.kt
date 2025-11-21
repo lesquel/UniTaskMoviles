@@ -8,11 +8,14 @@ import androidx.work.WorkManager
 import com.example.unitask.notifications.NotificationHelper
 import android.app.PendingIntent
 
+/**
+ * BroadcastReceiver que se activa con la alarma del sistema y restaura recordatorios al reiniciar.
+ */
 class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.action
         if (action == Intent.ACTION_BOOT_COMPLETED) {
-            // enqueue reschedule worker
+            // El sistema se reinició, volvemos a programar todas las alarmas existentes.
             val req = OneTimeWorkRequestBuilder<RescheduleWorker>().build()
             WorkManager.getInstance(context).enqueue(req)
             return
@@ -24,8 +27,13 @@ class AlarmReceiver : BroadcastReceiver() {
         val helper = NotificationHelper(context, nm)
         helper.createChannels()
 
-        // Build pending intent to open app on tap
-        val pending = PendingIntent.getActivity(context, alarmId.hashCode(), context.packageManager.getLaunchIntentForPackage(context.packageName), PendingIntent.FLAG_IMMUTABLE)
+        // Preparar intento para abrir la app si el usuario toca la notificación.
+        val pending = PendingIntent.getActivity(
+            context,
+            alarmId.hashCode(),
+            context.packageManager.getLaunchIntentForPackage(context.packageName),
+            PendingIntent.FLAG_IMMUTABLE
+        )
         val title = context.getString(com.example.unitask.R.string.app_name)
         val body = if (taskId != null) context.getString(com.example.unitask.R.string.add_task) else context.getString(com.example.unitask.R.string.add_task)
         helper.showReminderNotification(alarmId, title, body, pending)

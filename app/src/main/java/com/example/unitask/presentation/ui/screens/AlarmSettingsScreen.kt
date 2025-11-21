@@ -57,6 +57,9 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 
+/**
+ * Pantalla que lista las alarmas, permite filtrarlas por tarea y abre el diálogo de edición.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AlarmSettingsScreen(
@@ -246,6 +249,9 @@ fun AlarmSettingsScreen(
     }
 }
 
+/**
+ * Card que resume una alarma individual mostrando hora programada, opciones y detalles.
+ */
 @Composable
 private fun AlarmRow(
     settings: NotificationSetting,
@@ -286,6 +292,9 @@ private fun AlarmRow(
     }
 }
 
+/**
+ * Genera una cadena humana describiendo la frecuencia del recordatorio.
+ */
 private fun describeInterval(setting: NotificationSetting): String {
     val totalMillis = setting.repeatIntervalMillis ?: return "Alarma única"
     val minutes = totalMillis / 60000
@@ -297,6 +306,9 @@ private fun describeInterval(setting: NotificationSetting): String {
     }
 }
 
+/**
+ * Diálogo para crear o actualizar una alarma, con selectores de cantidad, unidad y opciones.
+ */
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun AlarmEditDialog(
@@ -403,6 +415,9 @@ private fun AlarmEditDialog(
     )
 }
 
+/**
+ * Estima cuántas unidades faltan para el disparo usando la configuración previa.
+ */
 private fun extractInitialAmount(initial: NotificationSetting?): Int {
     if (initial == null) return 1
     val unitMillis = if (initial.useMinutes) 60000L else 3600000L
@@ -411,5 +426,8 @@ private fun extractInitialAmount(initial: NotificationSetting?): Int {
         .toInt()
 }
 
+/**
+ * Presets prácticos que ayudan a fijar minutos u horas antes del evento.
+ */
 private data class ReminderPreset(val label: String, val amount: Int, val useMinutes: Boolean)
 

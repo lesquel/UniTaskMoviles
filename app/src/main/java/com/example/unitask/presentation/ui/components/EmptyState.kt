@@ -17,6 +17,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 
+/**
+ * Pantalla simple para indicar que no hay tareas y motivar a crear nuevas.
+ */
 @Composable
 fun EmptyState(modifier: Modifier = Modifier, titleResId: Int = com.example.unitask.R.string.no_tasks_message) {
     val title = stringResource(id = titleResId)
@@ -41,6 +44,9 @@ fun EmptyState(modifier: Modifier = Modifier, titleResId: Int = com.example.unit
     }
 }
 
+/**
+ * Estado vacío específico para materias, mostrando título y descripción secundarios.
+ */
 @Composable
 fun EmptySubjectsState(modifier: Modifier = Modifier, titleResId: Int = com.example.unitask.R.string.subjects_title, descriptionResId: Int = com.example.unitask.R.string.no_tasks_message) {
     val title = stringResource(id = titleResId)

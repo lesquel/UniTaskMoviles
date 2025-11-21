@@ -4,7 +4,7 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 
 /**
- * A thin wrapper around Android's AlarmManager to make scheduling testable.
+ * Envoltorio de AlarmManager que permite simular las llamadas desde pruebas.
  */
 interface AlarmManagerWrapper {
     fun setExactAndAllowWhileIdle(type: Int, triggerAtMillis: Long, intent: PendingIntent)
@@ -31,4 +31,4 @@ class RealAlarmManagerWrapper(private val alarmManager: AlarmManager) : AlarmMan
     }
 }
 
-// A simple fake implementation for tests can be written in test sources when needed.
+// Se puede agregar un fake en las fuentes de prueba si se necesita controlar el tiempo.

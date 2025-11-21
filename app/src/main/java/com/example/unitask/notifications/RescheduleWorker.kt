@@ -6,10 +6,13 @@ import androidx.work.WorkerParameters
 import com.example.unitask.di.AppModule
 import kotlinx.coroutines.flow.first
 
+/**
+ * Worker que recalcula y rehace las alarmas almacenadas al iniciar el dispositivo.
+ */
 class RescheduleWorker(appContext: Context, params: WorkerParameters) : CoroutineWorker(appContext, params) {
     override suspend fun doWork(): Result {
         try {
-            // Ensure AppModule is configured (should be called from MainActivity normally)
+            // Garantiza que AppModule esté inicializado, como debería ocurrir desde MainActivity.
             AppModule.configureAppModule(applicationContext)
             val repo = AppModule.provideNotificationRepository()
             val all = repo.observeAll().first()

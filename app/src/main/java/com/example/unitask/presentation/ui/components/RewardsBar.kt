@@ -9,6 +9,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
+/**
+ * Barra horizontal que despliega nivel y un indicador lineal del progreso hacia el siguiente nivel.
+ */
 @Composable
 fun RewardsBar(xp: Int, level: Int, progressFraction: Float) {
     Column(modifier = Modifier.fillMaxWidth().padding(8.dp)) {

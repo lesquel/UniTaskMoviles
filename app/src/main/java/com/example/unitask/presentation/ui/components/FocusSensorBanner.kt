@@ -24,6 +24,9 @@ import com.example.unitask.R
 import com.example.unitask.sensors.FocusSensorState
 import kotlinx.coroutines.delay
 
+/**
+ * Banner temporal que muestra mensajes del sensor (modo oscuro, presencia) y se autodestruye.
+ */
 @Composable
 fun FocusSensorBanner(
     state: FocusSensorState,
@@ -34,7 +37,7 @@ fun FocusSensorBanner(
         state.isUserPresent -> R.string.focus_banner_proximity_message
         else -> null
     }
-    // Auto-dismiss the banner after five seconds once it appears.
+    // Dismiss automático cinco segundos después de aparecer para no obstruir la UI.
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(messageRes) {
         if (messageRes != null) {

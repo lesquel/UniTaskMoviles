@@ -20,13 +20,16 @@ import androidx.compose.ui.unit.dp
 import com.example.unitask.R
 import androidx.compose.material3.SwitchDefaults
 
+/**
+ * Cuadro de diálogo que permite al usuario activar o desactivar las alertas del sensor de proximidad.
+ */
 @Composable
 fun FocusSensorSettingsDialog(
     enabled: Boolean,
     onEnabledChange: (Boolean) -> Unit,
     onDismissRequest: () -> Unit
 ) {
-    // Dialog toggling the focus alert feature persisted by DataStore.
+    // Diálogo que alterna la funcionalidad de alertas persistida en DataStore.
     AlertDialog(
         onDismissRequest = onDismissRequest,
         title = {

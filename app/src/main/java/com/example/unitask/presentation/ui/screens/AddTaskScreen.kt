@@ -60,6 +60,9 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+/**
+ * Configura ViewModel y efectos para la pantalla de creación/edición de tareas.
+ */
 @Composable
 fun AddTaskRoute(
     taskId: String? = null,
@@ -106,6 +109,9 @@ fun AddTaskRoute(
     )
 }
 
+/**
+ * Formulario para capturar título, materia y fecha/hora de entrega con validación básica.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTaskScreen(
@@ -210,6 +216,9 @@ fun AddTaskScreen(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
+/**
+ * Muestra una lista desplegable para seleccionar la materia asociada a la tarea.
+ */
 @Composable
 private fun SubjectSelector(
     subjects: List<SubjectOption>,
@@ -265,6 +274,9 @@ private fun SubjectSelector(
     }
 }
 
+/**
+ * Botones que abren selectores nativos de fecha y hora usando los valores formateados.
+ */
 @Composable
 private fun DateTimePickers(
     dueDateText: String,
@@ -288,6 +300,9 @@ private fun DateTimePickers(
     }
 }
 
+/**
+ * Componente reutilizable que combina icono, etiqueta y valor visible para un picker.
+ */
 @Composable
 private fun PickerButton(
     label: String,
@@ -308,6 +323,9 @@ private fun PickerButton(
     }
 }
 
+/**
+ * Punto de color circular que muestra el color asociado a una materia.
+ */
 @Composable
 private fun SubjectColorDot(colorHex: String) {
     val color = runCatching { Color(android.graphics.Color.parseColor(colorHex)) }

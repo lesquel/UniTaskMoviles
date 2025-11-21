@@ -37,6 +37,9 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+/**
+ * Tarjeta que resume información clave de la tarea y ofrece acciones rápidas.
+ */
 @Composable
 fun TaskCard(
     task: TaskUiModel,
@@ -45,7 +48,7 @@ fun TaskCard(
     onAlarmSettingsClick: (String) -> Unit,
     onTaskClick: (String) -> Unit
 ) {
-    // Task cards support completion, alarm navigation, and editing taps.
+    // Las tarjetas permiten completar la tarea, acceder a alarmas y editar mediante tap.
     Card(
         modifier = modifier
             .padding(vertical = 4.dp)
@@ -120,12 +123,18 @@ fun TaskCard(
     }
 }
 
+/**
+ * Da formato legible a la próxima alarma si existe.
+ */
 private fun formatTrigger(triggerAtMillis: Long?): String {
     if (triggerAtMillis == null) return ""
     val formatter = DateTimeFormatter.ofPattern("dd MMM HH:mm", Locale.getDefault())
     val instant = Instant.ofEpochMilli(triggerAtMillis)
     return formatter.withZone(ZoneId.systemDefault()).format(instant)
 }
+/**
+ * Badge compacta que muestra el nombre y color de la materia asociada.
+ */
 @Composable
 fun SubjectBadge(label: String, colorHex: String, modifier: Modifier = Modifier) {
     val color = runCatching { Color(parseColor(colorHex)) }.getOrElse { MaterialTheme.colorScheme.primary }

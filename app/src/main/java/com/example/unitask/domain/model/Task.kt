@@ -1,18 +1,16 @@
 package com.example.unitask.domain.model
 
-// Modelo que representa la información esencial de una tarea.
-
 import java.time.LocalDateTime
 import java.util.UUID
 
 /**
- * Represents an academic task scheduled for a specific subject.
+ * Modelo de dominio que describe una tarea académica planificada.
  */
 data class Task(
-    val id: String = UUID.randomUUID().toString(),
-    val title: String,
-    val subjectId: String,
-    val dueDateTime: LocalDateTime,
-    val createdAt: LocalDateTime = LocalDateTime.now(),
-    val isCompleted: Boolean = false
+    val id: String = UUID.randomUUID().toString(),               // Identificador único.
+    val title: String,                                          // Título descriptivo de la tarea.
+    val subjectId: String,                                      // ID de la asignatura asociada.
+    val dueDateTime: LocalDateTime,                            // Fecha y hora de entrega.
+    val createdAt: LocalDateTime = LocalDateTime.now(),        // Timestamp de creación.
+    val isCompleted: Boolean = false                           // Indica si ya fue completada.
 )

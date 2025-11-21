@@ -58,6 +58,9 @@ import com.example.unitask.presentation.viewmodel.TaskUiModel
 import com.example.unitask.settings.FocusSensorSettingsRepository
 import kotlinx.coroutines.launch
 
+/**
+ * Envuelve la lógica del ViewModel y las interacciones para exponer la pantalla principal.
+ */
 @Composable
 fun DashboardRoute(
     viewModel: DashboardViewModel = viewModel(factory = AppModule.viewModelFactory),
@@ -102,6 +105,9 @@ fun DashboardRoute(
         )
 }
 
+/**
+ * Pantalla principal que combina tareas urgentes, barra de recompensas y listado completo.
+ */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun DashboardScreen(
@@ -122,7 +128,7 @@ fun DashboardScreen(
     var showFocusSettingsDialog by remember { mutableStateOf(false) }
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        // Top app bar contains theme toggle, focus settings entry point, and subject manager shortcut.
+        // La app bar superior integra el selector de tema y accesos directos a ajustes de materias.
         topBar = {
             TopAppBar(
                 title = { Text(text = stringResource(id = com.example.unitask.R.string.title_unittask)) },
@@ -150,7 +156,7 @@ fun DashboardScreen(
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { innerPadding ->
-        // Scrollable list mixing urgent items, rewards, and the full task list.
+        // Lista desplazable que mezcla tareas urgentes, barra de recompensas y el listado completo.
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -200,7 +206,7 @@ fun DashboardScreen(
         }
     }
 
-    // Dialog controlling whether focus alerts are enabled via DataStore.
+    // Dialogo que permite habilitar o deshabilitar las alertas de enfoque persistidas en DataStore.
     if (showFocusSettingsDialog) {
         FocusSensorSettingsDialog(
             enabled = focusAlertsEnabled,
@@ -211,7 +217,7 @@ fun DashboardScreen(
 }
 
 /**
- * Displays urgent tasks in a horizontal row; clicking a card opens the edit flow.
+ * Muestra tareas urgentes en fila horizontal; al tocar una tarjeta inicia la edición.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
