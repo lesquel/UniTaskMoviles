@@ -46,6 +46,7 @@ import java.time.LocalDateTime
 object AppModule {
 
     // Data sources
+    // In-memory repositories simulate persistent storage for subjects/tasks during demo.
     private val subjectRepository: SubjectRepository by lazy {
         InMemorySubjectRepository(SampleData.subjects())
     }
@@ -159,6 +160,7 @@ object AppModule {
 
     fun configureAppModule(context: Context) {
         _appContext = context.applicationContext
+        // Lazily create shared services so they survive the app lifecycle.
         if (_alarmScheduler == null) {
             val alarmManager =
                 context.getSystemService(Context.ALARM_SERVICE) as AlarmManager

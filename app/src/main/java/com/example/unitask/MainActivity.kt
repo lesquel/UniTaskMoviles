@@ -29,13 +29,14 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Configure AppModule at app startup
+        // Configure the manual dependency container used by all ViewModels and repositories.
         AppModule.configureAppModule(applicationContext)
-        // Create notification channels early
+        // Create notification channels early so reminder/reward alerts can post right away.
         val notificationManager = getSystemService(NotificationManager::class.java)
             ?: throw IllegalStateException("NotificationManager unavailable")
         val notificationHelper = NotificationHelper(applicationContext, notificationManager)
         notificationHelper.createChannels()
+        // Keep one FocusSensorManager alive for the lifecycle so focus alerts can run.
         focusSensorManager = FocusSensorManager(applicationContext, notificationHelper)
 
         // Runtime permission: POST_NOTIFICATIONS (Android 13+)
@@ -64,6 +65,7 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+        // Extend the UI into system bars for modern edge-to-edge styling.
         enableEdgeToEdge()
         setContent {
             val systemDark = isSystemInDarkTheme()

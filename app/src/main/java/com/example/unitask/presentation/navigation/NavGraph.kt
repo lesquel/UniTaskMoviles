@@ -25,6 +25,7 @@ import com.example.unitask.presentation.ui.screens.SubjectsRoute
 import com.example.unitask.sensors.FocusSensorManager
 import com.example.unitask.settings.FocusSensorSettingsRepository
 
+// Navigation destinations that identify each screen in the Compose NavHost.
 private sealed class UniTaskDestination(val route: String) {
     object Dashboard : UniTaskDestination("dashboard")
     object AddTask : UniTaskDestination("add-task") {
@@ -42,6 +43,9 @@ private sealed class UniTaskDestination(val route: String) {
     }
 }
 
+/**
+ * Root composable that hosts navigation plus the focus alert banner.
+ */
 @Composable
 fun UniTaskApp(
     modifier: Modifier = Modifier,
