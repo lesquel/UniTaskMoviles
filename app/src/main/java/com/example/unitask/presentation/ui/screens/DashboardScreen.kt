@@ -38,8 +38,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.animation.animateContentSize
@@ -156,7 +158,8 @@ fun DashboardScreen(
                 UrgentTasksSection(
                     tasks = state.urgentTasks,
                     onTaskCompleted = onTaskCompleted,
-                    onAlarmSettingsClick = onAlarmSettingsClick
+                    onAlarmSettingsClick = onAlarmSettingsClick,
+                    onTaskClick = onTaskClick
                 )
             }
             item {
@@ -183,6 +186,7 @@ fun DashboardScreen(
                         task = task,
                         onTaskCompleted = onTaskCompleted,
                         onAlarmSettingsClick = onAlarmSettingsClick,
+                        onTaskClick = onTaskClick,
                         modifier = Modifier
                             .fillMaxWidth()
                             .animateContentSize()
@@ -206,7 +210,8 @@ fun DashboardScreen(
 private fun UrgentTasksSection(
     tasks: List<TaskUiModel>,
     onTaskCompleted: (String) -> Unit,
-    onAlarmSettingsClick: (String) -> Unit
+    onAlarmSettingsClick: (String) -> Unit,
+    onTaskClick: (String) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
@@ -228,6 +233,7 @@ private fun UrgentTasksSection(
                         task = task,
                         onTaskCompleted = onTaskCompleted,
                         onAlarmSettingsClick = onAlarmSettingsClick,
+                        onTaskClick = onTaskClick,
                         modifier = Modifier
                             .width(260.dp)
                             .animateContentSize()
