@@ -28,7 +28,6 @@
     <string name="select_time">Selecciona hora</string>
     <string name="title_label">Título</string>
     <string name="saving">Guardando...</string>
-    <string name="save_task">Guardar tarea</string>
     <string name="configure_alarms">Configurar alarmas</string>
     <string name="alarm_summary_none">Sin recordatorios</string>
     <string name="alarm_summary_next">Próximo: %1$s</string>
