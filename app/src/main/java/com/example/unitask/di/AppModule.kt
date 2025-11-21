@@ -25,9 +25,11 @@ import com.example.unitask.domain.usecase.GetAllNotificationsUseCase
 import com.example.unitask.domain.usecase.GetAllTasksUseCase
 import com.example.unitask.domain.usecase.GetLevelUseCase
 import com.example.unitask.domain.usecase.GetSubjectsUseCase
+import com.example.unitask.domain.usecase.GetTaskByIdUseCase
 import com.example.unitask.domain.usecase.GetUrgentTasksUseCase
 import com.example.unitask.domain.usecase.GetXpUseCase
 import com.example.unitask.domain.usecase.ScheduleAlarmUseCase
+import com.example.unitask.domain.usecase.UpdateTaskUseCase
 import com.example.unitask.notifications.AlarmManagerWrapper
 import com.example.unitask.notifications.AlarmScheduler
 import com.example.unitask.notifications.RealAlarmManagerWrapper
@@ -63,6 +65,14 @@ object AppModule {
 
     private val addTaskUseCase: AddTaskUseCase by lazy {
         AddTaskUseCase(taskRepository, subjectRepository)
+    }
+
+    private val updateTaskUseCase: UpdateTaskUseCase by lazy {
+        UpdateTaskUseCase(taskRepository)
+    }
+
+    private val getTaskByIdUseCase: GetTaskByIdUseCase by lazy {
+        GetTaskByIdUseCase(taskRepository)
     }
 
     private val completeTaskUseCase: CompleteTaskUseCase by lazy {
@@ -125,18 +135,24 @@ object AppModule {
             )
         }
         initializer {
-            AddTaskViewModel(
-                getSubjectsUseCase = getSubjectsUseCase,
-                addTaskUseCase = addTaskUseCase,
-                nowProvider = { LocalDateTime.now() }
-            )
-        }
-        initializer {
             SubjectsViewModel(
                 getSubjectsUseCase = getSubjectsUseCase,
                 addSubjectUseCase = addSubjectUseCase,
                 editSubjectUseCase = editSubjectUseCase,
                 deleteSubjectUseCase = deleteSubjectUseCase
+            )
+        }
+    }
+
+    fun addTaskViewModelFactory(initialTaskId: String?): ViewModelProvider.Factory = viewModelFactory {
+        initializer {
+            AddTaskViewModel(
+                getSubjectsUseCase = getSubjectsUseCase,
+                addTaskUseCase = addTaskUseCase,
+                updateTaskUseCase = updateTaskUseCase,
+                getTaskByIdUseCase = getTaskByIdUseCase,
+                nowProvider = { LocalDateTime.now() },
+                initialTaskId = initialTaskId
             )
         }
     }

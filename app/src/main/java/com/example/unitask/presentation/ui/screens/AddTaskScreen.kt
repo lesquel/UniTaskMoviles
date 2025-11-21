@@ -62,11 +62,12 @@ import java.util.Locale
 
 @Composable
 fun AddTaskRoute(
-    viewModel: AddTaskViewModel = viewModel(factory = AppModule.viewModelFactory),
+    taskId: String? = null,
     onBack: () -> Unit,
     onTaskSaved: () -> Unit = onBack,
     onAlarmSettingsClick: () -> Unit
 ) {
+    val viewModel: AddTaskViewModel = viewModel(factory = AppModule.addTaskViewModelFactory(taskId))
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
@@ -75,10 +76,11 @@ fun AddTaskRoute(
         viewModel.events.collect { event ->
             when (event) {
                 is AddTaskEvent.Success -> {
-                        snackbarHostState.showSnackbar(
-                            message = context.getString(com.example.unitask.R.string.task_created),
-                            duration = SnackbarDuration.Short
-                        )
+                    val messageRes = if (event.isUpdate) com.example.unitask.R.string.task_updated else com.example.unitask.R.string.task_created
+                    snackbarHostState.showSnackbar(
+                        message = context.getString(messageRes),
+                        duration = SnackbarDuration.Short
+                    )
                     onTaskSaved()
                 }
                 is AddTaskEvent.Error -> {
@@ -117,6 +119,7 @@ fun AddTaskScreen(
     onSubmit: () -> Unit,
     onAlarmSettingsClick: () -> Unit
 ) {
+    val isEditing = state.editingTaskId != null
     val context = LocalContext.current
     val dateFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.getDefault()) }
     val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault()) }
@@ -126,7 +129,7 @@ fun AddTaskScreen(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text(text = stringResource(id = com.example.unitask.R.string.new_task)) },
+                title = { Text(text = stringResource(id = if (isEditing) com.example.unitask.R.string.edit_task else com.example.unitask.R.string.new_task)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(id = com.example.unitask.R.string.back))
@@ -199,7 +202,7 @@ fun AddTaskScreen(
                     onClick = onSubmit,
                     enabled = !state.isSubmitting && state.subjects.isNotEmpty()
                 ) {
-                    Text(text = if (state.isSubmitting) stringResource(id = com.example.unitask.R.string.saving) else stringResource(id = com.example.unitask.R.string.save_task))
+                    Text(text = if (state.isSubmitting) stringResource(id = com.example.unitask.R.string.saving) else stringResource(id = if (isEditing) com.example.unitask.R.string.update_task else com.example.unitask.R.string.save_task))
                 }
             }
         }

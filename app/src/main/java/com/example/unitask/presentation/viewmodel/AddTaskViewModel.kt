@@ -3,8 +3,11 @@ package com.example.unitask.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.unitask.domain.model.Subject
+import com.example.unitask.domain.model.Task
 import com.example.unitask.domain.usecase.AddTaskUseCase
 import com.example.unitask.domain.usecase.GetSubjectsUseCase
+import com.example.unitask.domain.usecase.GetTaskByIdUseCase
+import com.example.unitask.domain.usecase.UpdateTaskUseCase
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -21,7 +24,10 @@ import kotlinx.coroutines.launch
 class AddTaskViewModel(
     getSubjectsUseCase: GetSubjectsUseCase,
     private val addTaskUseCase: AddTaskUseCase,
-    private val nowProvider: () -> LocalDateTime
+    private val updateTaskUseCase: UpdateTaskUseCase,
+    private val getTaskByIdUseCase: GetTaskByIdUseCase,
+    private val nowProvider: () -> LocalDateTime,
+    initialTaskId: String? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AddTaskUiState())
@@ -33,6 +39,7 @@ class AddTaskViewModel(
 
     private val _events = MutableSharedFlow<AddTaskEvent>()
     val events = _events
+    private var editingTask: Task? = null
 
     init {
         resetDueDateDefaults()
@@ -44,6 +51,7 @@ class AddTaskViewModel(
                 }
             }
         }
+        initialTaskId?.let { loadTask(it) }
     }
 
     fun onTitleChanged(value: String) {
@@ -78,14 +86,26 @@ class AddTaskViewModel(
         viewModelScope.launch {
             _uiState.updateDetails { copy(isSubmitting = true, errorMessage = null) }
             runCatching {
-                addTaskUseCase(
-                    title = current.title,
-                    subjectId = subjectId,
-                    dueDateTime = dueDateTime
-                )
+                if (current.editingTaskId != null && editingTask != null) {
+                    val updatedTask = editingTask!!.copy(
+                        title = current.title,
+                        subjectId = subjectId,
+                        dueDateTime = dueDateTime
+                    )
+                    updateTaskUseCase(updatedTask)
+                    updatedTask
+                } else {
+                    addTaskUseCase(
+                        title = current.title,
+                        subjectId = subjectId,
+                        dueDateTime = dueDateTime
+                    )
+                }
             }
                 .onSuccess { task ->
-                    _events.emit(AddTaskEvent.Success(task.id))
+                    val isUpdate = current.editingTaskId != null
+                    _events.emit(AddTaskEvent.Success(task.id, isUpdate))
+                    editingTask = null
                     _uiState.value = AddTaskUiState(
                         subjects = subjectsFlow.value,
                         selectedSubjectId = subjectsFlow.value.firstOrNull()?.id
@@ -123,6 +143,27 @@ class AddTaskViewModel(
     ) {
         value = value.transform()
     }
+
+    private fun loadTask(taskId: String) {
+        viewModelScope.launch {
+            val task = getTaskByIdUseCase(taskId)
+            if (task == null) {
+                _uiState.updateDetails { copy(errorMessage = "Tarea no encontrada.") }
+                return@launch
+            }
+            editingTask = task
+            _uiState.updateDetails {
+                copy(
+                    title = task.title,
+                    selectedSubjectId = task.subjectId,
+                    dueDate = task.dueDateTime.toLocalDate(),
+                    dueTime = task.dueDateTime.toLocalTime(),
+                    editingTaskId = task.id,
+                    errorMessage = null
+                )
+            }
+        }
+    }
 }
 
 data class AddTaskUiState(
@@ -132,7 +173,8 @@ data class AddTaskUiState(
     val dueTime: LocalTime? = null,
     val subjects: List<SubjectOption> = emptyList(),
     val isSubmitting: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val editingTaskId: String? = null
 )
 
 data class SubjectOption(
@@ -142,6 +184,6 @@ data class SubjectOption(
 )
 
 sealed class AddTaskEvent {
-    data class Success(val taskId: String) : AddTaskEvent()
+    data class Success(val taskId: String, val isUpdate: Boolean) : AddTaskEvent()
     data class Error(val message: String) : AddTaskEvent()
 }
