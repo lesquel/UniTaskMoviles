@@ -6,6 +6,7 @@ import java.time.LocalDateTime
 
 object SampleData {
 
+    // Retorna un conjunto de asignaturas de ejemplo con profesores y colores.
     fun subjects(): List<Subject> = listOf(
         Subject(
             id = "subject-architecture",
@@ -27,6 +28,7 @@ object SampleData {
         )
     )
 
+    // Retorna tareas de ejemplo con fechas relativas a la referencia actual.
     fun tasks(reference: LocalDateTime = LocalDateTime.now()): List<Task> {
         val base = reference.withSecond(0).withNano(0)
         val subjects = subjects()

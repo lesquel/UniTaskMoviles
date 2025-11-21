@@ -12,11 +12,14 @@ class InMemoryTaskRepository(
     initialTasks: List<Task> = emptyList()
 ) : TaskRepository {
 
+    // Comparador que prioriza fecha de entrega y luego título para mantener orden estable.
     private val taskComparator = compareBy<Task> { it.dueDateTime }.thenBy { it.title.lowercase() }
     private val _tasks = MutableStateFlow(initialTasks.sortedWith(taskComparator))
 
+    // Flujo observable con las tareas ordenadas.
     override fun getTasksFlow(): Flow<List<Task>> = _tasks.asStateFlow()
 
+    // Inserta una tarea nueva asegurando validez y que el ID no exista.
     override suspend fun addTask(task: Task) {
         validateTask(task)
         _tasks.update { current ->
@@ -25,6 +28,7 @@ class InMemoryTaskRepository(
         }
     }
 
+    // Marca una tarea completa y reordena la lista.
     override suspend fun completeTask(taskId: String) {
         _tasks.update { current ->
             check(current.any { it.id == taskId }) { "Task not found." }
@@ -34,6 +38,7 @@ class InMemoryTaskRepository(
         }
     }
 
+    // Borra una tarea por su identificador.
     override suspend fun deleteTask(taskId: String) {
         _tasks.update { current ->
             check(current.any { it.id == taskId }) { "Task not found." }
@@ -41,6 +46,7 @@ class InMemoryTaskRepository(
         }
     }
 
+    // Actualiza una tarea existente con nuevos datos.
     override suspend fun updateTask(task: Task) {
         validateTask(task)
         _tasks.update { current ->
@@ -50,6 +56,7 @@ class InMemoryTaskRepository(
         }
     }
 
+    // Asegura que la tarea tenga título y fecha futura.
     private fun validateTask(task: Task) {
         require(task.title.isNotBlank()) { "Task title cannot be blank." }
         val now = LocalDateTime.now()
@@ -59,6 +66,7 @@ class InMemoryTaskRepository(
     }
 
     companion object {
+        // Fábrica para inicializar el repositorio con tareas de ejemplo.
         fun withSampleData(): InMemoryTaskRepository = InMemoryTaskRepository(SampleData.tasks())
     }
 }

@@ -13,8 +13,10 @@ class InMemorySubjectRepository(
 
     private val _subjects = MutableStateFlow(initialSubjects.sortedBy(::normalizeName))
 
+    // Flujo observable con la lista de asignaturas ordenadas alfabéticamente.
     override fun getSubjectsFlow(): Flow<List<Subject>> = _subjects.asStateFlow()
 
+    // Agrega una asignatura validando nombre y unicidad de ID.
     override suspend fun addSubject(subject: Subject) {
         require(subject.name.isNotBlank()) { "Subject name cannot be blank." }
         _subjects.update { current ->
@@ -23,6 +25,7 @@ class InMemorySubjectRepository(
         }
     }
 
+    // Reemplaza una asignatura existente y mantiene el orden.
     override suspend fun editSubject(subject: Subject) {
         require(subject.name.isNotBlank()) { "Subject name cannot be blank." }
         _subjects.update { current ->
@@ -32,6 +35,7 @@ class InMemorySubjectRepository(
         }
     }
 
+    // Elimina una asignatura por ID.
     override suspend fun deleteSubject(subjectId: String) {
         _subjects.update { current ->
             check(current.any { it.id == subjectId }) { "Subject not found." }
@@ -39,9 +43,11 @@ class InMemorySubjectRepository(
         }
     }
 
+    // Normaliza para mantener orden consistente.
     private fun normalizeName(subject: Subject): String = subject.name.trim().lowercase()
 
     companion object {
+        // Fábrica rápida con datos de ejemplo.
         fun withSampleData(): InMemorySubjectRepository = InMemorySubjectRepository(SampleData.subjects())
     }
 }

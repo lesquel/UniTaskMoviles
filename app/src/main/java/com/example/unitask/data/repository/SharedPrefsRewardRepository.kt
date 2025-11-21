@@ -14,6 +14,7 @@ class SharedPrefsRewardRepository(private val context: Context) : RewardReposito
     private val _xp = MutableStateFlow(prefs.getInt(KEY_XP, 0))
     private val _level = MutableStateFlow(prefs.getInt(KEY_LEVEL, 1))
 
+    // Suma XP, escala niveles y persiste los valores.
     override suspend fun addXp(amount: Int) {
         val currentXp = _xp.value
         val currentLevel = _level.value
@@ -28,13 +29,16 @@ class SharedPrefsRewardRepository(private val context: Context) : RewardReposito
         _level.value = newLevel
     }
 
+    // Flujo que expone el XP actual.
     override fun getXp(): Flow<Int> = _xp
 
+    // Reinicia la XP y nivel en 0/1.
     override suspend fun resetXp() {
         prefs.edit().putInt(KEY_XP, 0).putInt(KEY_LEVEL, 1).apply()
         _xp.value = 0
         _level.value = 1
     }
 
+    // Flujo que expone el nivel actual.
     override fun getLevel(): Flow<Int> = _level
 }

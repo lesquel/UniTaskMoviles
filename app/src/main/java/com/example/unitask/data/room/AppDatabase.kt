@@ -1,8 +1,7 @@
 package com.example.unitask.data.room
 
-// Placeholder: Room was removed in favor of SharedPreferences-backed repositories.
-// This file remains as a no-op placeholder to avoid build failures while
-// the migration completes. It is safe to delete once all code references
-// to Room are removed.
-
+// Placeholder: Room se retiró en favor de repositorios basados en SharedPreferences.
+// Este objeto existe para evitar romper compilaciones mientras no se eliminen
+// por completo las referencias a Room. Se puede borrar una vez que toda la
+// capa data deje de usar estos stubs.
 object AppDatabasePlaceholder

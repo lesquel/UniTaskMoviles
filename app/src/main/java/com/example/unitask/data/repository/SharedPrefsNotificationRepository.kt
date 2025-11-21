@@ -17,6 +17,7 @@ class SharedPrefsNotificationRepository(private val context: Context, private va
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     private val _state = MutableStateFlow(loadAll())
 
+    // Carga la lista serializada de ajustes de notificación desde SharedPreferences.
     private fun loadAll(): List<NotificationSetting> {
         val raw = prefs.getString(KEY_NOTIFICATIONS, null) ?: return emptyList()
         return try {
@@ -36,6 +37,7 @@ class SharedPrefsNotificationRepository(private val context: Context, private va
         } catch (t: Throwable) { emptyList() }
     }
 
+    // Guarda la lista actualizada como JSON y actualiza el estado interno.
     private fun persist(list: List<NotificationSetting>) {
         val arr = JSONArray()
         list.forEach { s ->
@@ -53,6 +55,7 @@ class SharedPrefsNotificationRepository(private val context: Context, private va
         _state.value = list
     }
 
+    // Actualiza o agrega una notificación y la programa si está habilitada.
     override suspend fun save(setting: NotificationSetting) {
         val list = _state.value.toMutableList()
         val idx = list.indexOfFirst { it.id == setting.id }
@@ -69,6 +72,7 @@ class SharedPrefsNotificationRepository(private val context: Context, private va
         }
     }
 
+    // Elimina un ajuste y cancela su alarma asociada.
     override suspend fun delete(id: String) {
         val list = _state.value.toMutableList()
         val idx = list.indexOfFirst { it.id == id }
@@ -82,10 +86,13 @@ class SharedPrefsNotificationRepository(private val context: Context, private va
         }
     }
 
+    // Obtiene un ajuste por ID desde caché en memoria.
     override suspend fun get(id: String): NotificationSetting? = _state.value.firstOrNull { it.id == id }
 
+    // Flujo observador que emite cambios en los ajustes registrados.
     override fun observeAll(): Flow<List<NotificationSetting>> = _state
 
+    // Programa manualmente una alarma para el ajuste indicado.
     override suspend fun schedule(setting: NotificationSetting) {
         val intent = android.content.Intent(context, com.example.unitask.notifications.AlarmReceiver::class.java).apply {
             putExtra("alarm_id", setting.id)
@@ -95,6 +102,7 @@ class SharedPrefsNotificationRepository(private val context: Context, private va
         alarmScheduler.scheduleExact(setting.id, setting.triggerAtMillis, setting.repeatIntervalMillis, pending)
     }
 
+    // Cancela una alarma basada en el ID del ajuste.
     override suspend fun cancel(id: String) {
         val intent = android.content.Intent(context, com.example.unitask.notifications.AlarmReceiver::class.java).apply { putExtra("alarm_id", id) }
         val pending = android.app.PendingIntent.getBroadcast(context, id.hashCode(), intent, android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE)
