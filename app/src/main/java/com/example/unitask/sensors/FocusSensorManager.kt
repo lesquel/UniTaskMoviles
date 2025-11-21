@@ -33,6 +33,7 @@ class FocusSensorManager(
     private var darkNotificationSent = false
     private var nearNotificationSent = false
     private var isListening = false
+    private var alertsEnabled = true
 
     private val lightThreshold = 40f
 
@@ -57,7 +58,7 @@ class FocusSensorManager(
     }
 
     fun start() {
-        if (isListening) return
+        if (!alertsEnabled || isListening) return
         lightSensor?.let {
             sensorManager.registerListener(lightListener, it, SensorManager.SENSOR_DELAY_NORMAL)
         }
@@ -100,6 +101,23 @@ class FocusSensorManager(
         } else {
             nearNotificationSent = false
         }
+    }
+
+    fun setAlertsEnabled(enabled: Boolean) {
+        if (alertsEnabled == enabled) return
+        alertsEnabled = enabled
+        if (enabled) {
+            start()
+        } else {
+            stop()
+            resetState()
+        }
+    }
+
+    private fun resetState() {
+        darkNotificationSent = false
+        nearNotificationSent = false
+        _state.value = FocusSensorState()
     }
 
     private fun showDarkNotification() {

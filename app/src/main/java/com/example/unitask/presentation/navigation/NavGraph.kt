@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -22,10 +23,16 @@ import com.example.unitask.presentation.ui.screens.AlarmSettingsScreen
 import com.example.unitask.presentation.ui.screens.DashboardRoute
 import com.example.unitask.presentation.ui.screens.SubjectsRoute
 import com.example.unitask.sensors.FocusSensorManager
+import com.example.unitask.settings.FocusSensorSettingsRepository
 
 private sealed class UniTaskDestination(val route: String) {
     object Dashboard : UniTaskDestination("dashboard")
-    object AddTask : UniTaskDestination("add-task")
+    object AddTask : UniTaskDestination("add-task") {
+        const val ARG_TASK_ID = "taskId"
+        val routeWithArgument: String = "$route?$ARG_TASK_ID={$ARG_TASK_ID}"
+        fun createRoute(taskId: String? = null): String =
+            if (taskId.isNullOrBlank()) route else "$route?$ARG_TASK_ID=${Uri.encode(taskId)}"
+    }
     object Subjects : UniTaskDestination("subjects")
     object AlarmSettings : UniTaskDestination("alarm-settings") {
         const val ARG_TASK_ID = "taskId"
@@ -40,23 +47,31 @@ fun UniTaskApp(
     modifier: Modifier = Modifier,
     isDarkTheme: Boolean,
     onToggleTheme: () -> Unit,
-    focusSensorManager: FocusSensorManager
+    focusSensorManager: FocusSensorManager,
+    focusSensorSettingsRepository: FocusSensorSettingsRepository
 ) {
     val focusState by focusSensorManager.state.collectAsState()
+    val focusAlertsEnabled by focusSensorSettingsRepository.focusAlertsEnabled.collectAsState(initial = true)
+    LaunchedEffect(focusAlertsEnabled) {
+        focusSensorManager.setAlertsEnabled(focusAlertsEnabled)
+    }
     val navController = rememberNavController()
     Box(modifier = modifier.fillMaxSize()) {
         UniTaskNavHost(
             navController = navController,
             modifier = Modifier.fillMaxSize(),
             isDarkTheme = isDarkTheme,
-            onToggleTheme = onToggleTheme
+            onToggleTheme = onToggleTheme,
+            focusSensorSettingsRepository = focusSensorSettingsRepository
         )
-        FocusSensorBanner(
-            state = focusState,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 12.dp)
-        )
+        if (focusAlertsEnabled) {
+            FocusSensorBanner(
+                state = focusState,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 12.dp)
+            )
+        }
     }
 }
 
@@ -65,7 +80,8 @@ private fun UniTaskNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
     isDarkTheme: Boolean,
-    onToggleTheme: () -> Unit
+    onToggleTheme: () -> Unit,
+    focusSensorSettingsRepository: FocusSensorSettingsRepository
 ) {
     NavHost(
         navController = navController,
@@ -75,14 +91,27 @@ private fun UniTaskNavHost(
         composable(UniTaskDestination.Dashboard.route) {
             DashboardRoute(
                 onAddTaskClick = { navController.navigate(UniTaskDestination.AddTask.route) },
+                focusSensorSettingsRepository = focusSensorSettingsRepository,
+                onTaskClick = { taskId -> navController.navigate(UniTaskDestination.AddTask.createRoute(taskId)) },
                 onManageSubjectsClick = { navController.navigate(UniTaskDestination.Subjects.route) },
                 onAlarmSettingsClick = { id -> navController.navigate(UniTaskDestination.AlarmSettings.createRoute(id)) },
                 isDarkTheme = isDarkTheme,
                 onToggleTheme = onToggleTheme
             )
         }
-        composable(UniTaskDestination.AddTask.route) {
+        composable(
+            route = UniTaskDestination.AddTask.routeWithArgument,
+            arguments = listOf(
+                navArgument(UniTaskDestination.AddTask.ARG_TASK_ID) {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+            val taskId = backStackEntry.arguments?.getString(UniTaskDestination.AddTask.ARG_TASK_ID)
             AddTaskRoute(
+                taskId = taskId,
                 onBack = { navController.popBackStack() },
                 onAlarmSettingsClick = { navController.navigate(UniTaskDestination.AlarmSettings.route) }
             )

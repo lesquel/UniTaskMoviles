@@ -4,6 +4,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,11 +15,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.ui.res.stringResource
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Brightness4
 import androidx.compose.material.icons.filled.Brightness7
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -34,7 +35,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -43,25 +46,32 @@ import androidx.compose.animation.animateContentSize
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.unitask.di.AppModule
 import com.example.unitask.presentation.ui.components.EmptyState
+import com.example.unitask.presentation.ui.components.FocusSensorSettingsDialog
 import com.example.unitask.presentation.ui.components.TaskCard
 import com.example.unitask.presentation.viewmodel.DashboardUiState
 import com.example.unitask.presentation.viewmodel.DashboardViewModel
 import com.example.unitask.presentation.viewmodel.RewardsViewModel
 // (imports cleaned)
 import com.example.unitask.presentation.viewmodel.TaskUiModel
+import com.example.unitask.settings.FocusSensorSettingsRepository
+import kotlinx.coroutines.launch
 
 @Composable
 fun DashboardRoute(
     viewModel: DashboardViewModel = viewModel(factory = AppModule.viewModelFactory),
     rewardsViewModel: RewardsViewModel = viewModel(factory = AppModule.viewModelFactory),
+    focusSensorSettingsRepository: FocusSensorSettingsRepository,
     onAddTaskClick: () -> Unit = {},
     onManageSubjectsClick: () -> Unit = {},
     onAlarmSettingsClick: (String) -> Unit = {},
+    onTaskClick: (String) -> Unit = {},
     isDarkTheme: Boolean = false,
     onToggleTheme: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val focusAlertsEnabled by focusSensorSettingsRepository.focusAlertsEnabled.collectAsState(initial = true)
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(state.errorMessage) {
         val message = state.errorMessage
@@ -77,10 +87,15 @@ fun DashboardRoute(
             onAddTaskClick = onAddTaskClick,
             onManageSubjectsClick = onManageSubjectsClick,
             onAlarmSettingsClick = onAlarmSettingsClick,
+            onTaskClick = onTaskClick,
+            focusAlertsEnabled = focusAlertsEnabled,
+            onFocusAlertsToggle = { enabled ->
+                coroutineScope.launch { focusSensorSettingsRepository.setFocusAlertsEnabled(enabled) }
+            },
             onTaskCompleted = viewModel::onTaskCompleted,
             rewardsViewModel = rewardsViewModel,
-            isDarkTheme = isDarkTheme,
-            onToggleTheme = onToggleTheme
+                isDarkTheme = isDarkTheme,
+                onToggleTheme = onToggleTheme
         )
 }
 
@@ -92,11 +107,15 @@ fun DashboardScreen(
     onAddTaskClick: () -> Unit,
     onManageSubjectsClick: () -> Unit,
     onAlarmSettingsClick: (String) -> Unit,
+    onTaskClick: (String) -> Unit,
     onTaskCompleted: (String) -> Unit,
     rewardsViewModel: RewardsViewModel,
+    focusAlertsEnabled: Boolean,
+    onFocusAlertsToggle: (Boolean) -> Unit,
     isDarkTheme: Boolean = false,
     onToggleTheme: () -> Unit = {}
 ) {
+    var showFocusSettingsDialog by remember { mutableStateOf(false) }
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
@@ -171,6 +190,14 @@ fun DashboardScreen(
                 }
             }
         }
+    }
+
+    if (showFocusSettingsDialog) {
+        FocusSensorSettingsDialog(
+            enabled = focusAlertsEnabled,
+            onEnabledChange = onFocusAlertsToggle,
+            onDismissRequest = { showFocusSettingsDialog = false }
+        )
     }
 }
 

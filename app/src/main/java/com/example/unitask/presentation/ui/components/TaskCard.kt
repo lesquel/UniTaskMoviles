@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.clickable
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material.icons.Icons
@@ -41,12 +42,14 @@ fun TaskCard(
     task: TaskUiModel,
     modifier: Modifier = Modifier,
     onTaskCompleted: (String) -> Unit,
-    onAlarmSettingsClick: (String) -> Unit
+    onAlarmSettingsClick: (String) -> Unit,
+    onTaskClick: (String) -> Unit
 ) {
     Card(
         modifier = modifier
             .padding(vertical = 4.dp)
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .clickable { onTaskClick(task.id) },
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)

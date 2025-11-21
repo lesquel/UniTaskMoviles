@@ -21,9 +21,11 @@ import com.example.unitask.notifications.NotificationHelper
 import com.example.unitask.presentation.navigation.UniTaskApp
 import com.example.unitask.sensors.FocusSensorManager
 import com.example.unitask.ui.theme.UniTaskTheme
+import com.example.unitask.settings.FocusSensorSettingsRepository
 
 class MainActivity : ComponentActivity() {
     private lateinit var focusSensorManager: FocusSensorManager
+    private val focusSensorSettingsRepository by lazy { FocusSensorSettingsRepository(applicationContext) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -70,7 +72,8 @@ class MainActivity : ComponentActivity() {
                 UniTaskApp(
                     isDarkTheme = isDarkTheme.value,
                     onToggleTheme = { isDarkTheme.value = !isDarkTheme.value },
-                    focusSensorManager = focusSensorManager
+                    focusSensorManager = focusSensorManager,
+                    focusSensorSettingsRepository = focusSensorSettingsRepository
                 )
             }
         }
