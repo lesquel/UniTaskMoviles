@@ -19,7 +19,11 @@
     <string name="complete_task">Completar tarea</string>
     <!-- AddTask -->
     <string name="new_task">Nueva tarea</string>
+    <string name="edit_task">Editar tarea</string>
+    <string name="save_task">Guardar tarea</string>
+    <string name="update_task">Actualizar tarea</string>
     <string name="task_created">Tarea creada correctamente</string>
+    <string name="task_updated">Tarea actualizada correctamente</string>
     <string name="select_date">Selecciona fecha</string>
     <string name="select_time">Selecciona hora</string>
     <string name="title_label">Título</string>
