@@ -45,6 +45,7 @@ fun TaskCard(
     onAlarmSettingsClick: (String) -> Unit,
     onTaskClick: (String) -> Unit
 ) {
+    // Task cards support completion, alarm navigation, and editing taps.
     Card(
         modifier = modifier
             .padding(vertical = 4.dp)
