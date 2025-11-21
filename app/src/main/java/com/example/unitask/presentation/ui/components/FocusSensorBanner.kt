@@ -12,11 +12,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.unitask.R
 import com.example.unitask.sensors.FocusSensorState
+import kotlinx.coroutines.delay
 
 @Composable
 fun FocusSensorBanner(
@@ -28,7 +34,17 @@ fun FocusSensorBanner(
         state.isUserPresent -> R.string.focus_banner_proximity_message
         else -> null
     }
-    if (messageRes == null) return
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(messageRes) {
+        if (messageRes != null) {
+            visible = true
+            delay(5_000)
+            visible = false
+        } else {
+            visible = false
+        }
+    }
+    if (messageRes == null || !visible) return
 
     Surface(
         modifier = modifier
