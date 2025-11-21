@@ -4,6 +4,9 @@ import com.example.unitask.domain.model.Subject
 import com.example.unitask.domain.repository.SubjectRepository
 import kotlinx.coroutines.flow.Flow
 
+/**
+ * Expone un flujo con las asignaturas disponibles.
+ */
 class GetSubjectsUseCase(
     private val subjectRepository: SubjectRepository
 ) {

@@ -4,6 +4,9 @@ import com.example.unitask.domain.model.Subject
 import com.example.unitask.domain.repository.SubjectRepository
 import kotlinx.coroutines.flow.first
 
+/**
+ * Edita una asignatura y garantiza nombres únicos y colores válidos.
+ */
 class EditSubjectUseCase(
     private val subjectRepository: SubjectRepository
 ) {

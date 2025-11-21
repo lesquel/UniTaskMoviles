@@ -7,6 +7,9 @@ import java.time.LocalDateTime
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
+/**
+ * Retorna las tareas cuya entrega cae dentro de un rango corto (48h por defecto).
+ */
 class GetUrgentTasksUseCase(
     private val taskRepository: TaskRepository,
     private val nowProvider: () -> LocalDateTime = { LocalDateTime.now() }

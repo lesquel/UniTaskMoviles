@@ -5,6 +5,9 @@ import com.example.unitask.domain.repository.TaskRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
+/**
+ * Obtiene un flujo con todas las tareas, opcionalmente excluyendo las completadas.
+ */
 class GetAllTasksUseCase(
     private val taskRepository: TaskRepository
 ) {
