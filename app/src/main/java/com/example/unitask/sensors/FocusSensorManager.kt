@@ -15,7 +15,8 @@ import kotlinx.coroutines.flow.StateFlow
  */
 data class FocusSensorState(
     val isDark: Boolean = false,
-    val isUserPresent: Boolean = false
+    val isUserPresent: Boolean = false,
+    val isDeviceInMotion: Boolean = false
 )
 
 /**
@@ -29,6 +30,7 @@ class FocusSensorManager(
         ?: throw IllegalStateException("SensorManager unavailable")
     private val lightSensor: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
     private val proximitySensor: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY)
+    private val accelerometer: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
     private val _state = MutableStateFlow(FocusSensorState())
     val state: StateFlow<FocusSensorState> = _state
@@ -36,6 +38,7 @@ class FocusSensorManager(
     // Evita reentradas para que cada notificación se muestre solo una vez por activación.
     private var darkNotificationSent = false
     private var nearNotificationSent = false
+    private var motionNotificationSent = false
     private var isListening = false
     private var alertsEnabled = true
 
@@ -61,6 +64,19 @@ class FocusSensorManager(
         override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
     }
 
+    private val motionListener = object : SensorEventListener {
+        override fun onSensorChanged(event: SensorEvent) {
+            val acceleration = event.values.getOrNull(0)?.let { it * it } ?: 0f
+            val delta = event.values.getOrNull(1)?.let { it * it } ?: 0f
+            val gamma = event.values.getOrNull(2)?.let { it * it } ?: 0f
+            val magnitude = kotlin.math.sqrt(acceleration + delta + gamma)
+            val inMotion = magnitude > 2.5f
+            updateMotionState(inMotion)
+        }
+
+        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
+    }
+
     /**
      * Registra los listeners si las alertas están habilitadas y aún no estamos escuchando.
      */
@@ -72,6 +88,9 @@ class FocusSensorManager(
         proximitySensor?.let {
             sensorManager.registerListener(proximityListener, it, SensorManager.SENSOR_DELAY_NORMAL)
         }
+        accelerometer?.let {
+            sensorManager.registerListener(motionListener, it, SensorManager.SENSOR_DELAY_UI)
+        }
         isListening = true
     }
 
@@ -82,6 +101,7 @@ class FocusSensorManager(
         if (!isListening) return
         sensorManager.unregisterListener(lightListener)
         sensorManager.unregisterListener(proximityListener)
+        sensorManager.unregisterListener(motionListener)
         isListening = false
     }
 
@@ -119,6 +139,21 @@ class FocusSensorManager(
         }
     }
 
+    /**
+     * Detecta movimiento sostenido y publica una alerta para que el usuario deje el celular.
+     */
+    private fun updateMotionState(isInMotion: Boolean) {
+        val current = _state.value
+        if (current.isDeviceInMotion == isInMotion) return
+        _state.value = current.copy(isDeviceInMotion = isInMotion)
+        if (isInMotion && !motionNotificationSent) {
+            showMotionNotification()
+            motionNotificationSent = true
+        } else if (!isInMotion) {
+            motionNotificationSent = false
+        }
+    }
+
     // Habilita/deshabilita el muestreo y reinicia el estado cuando las alertas se apagan.
     fun setAlertsEnabled(enabled: Boolean) {
         if (alertsEnabled == enabled) return
@@ -137,9 +172,21 @@ class FocusSensorManager(
     private fun resetState() {
         darkNotificationSent = false
         nearNotificationSent = false
+        motionNotificationSent = false
         _state.value = FocusSensorState()
     }
 
+    /**
+     * Convoca NotificationHelper para informar que el dispositivo está en movimiento.
+     */
+    private fun showMotionNotification() {
+        notificationHelper.showReminderNotification(
+            "focus-motion",
+            context.getString(R.string.focus_alert_title),
+            context.getString(R.string.focus_notification_motion_body),
+            null
+        )
+    }
     /**
      * Convoca NotificationHelper para informar que el ambiente está oscuro.
      */

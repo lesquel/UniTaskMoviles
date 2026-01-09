@@ -125,6 +125,11 @@ fun AddTaskScreen(
     onSubmit: () -> Unit,
     onAlarmSettingsClick: () -> Unit
 ) {
+    LaunchedEffect(state.errorMessage) {
+        state.errorMessage?.let { message ->
+            snackbarHostState.showSnackbar(message)
+        }
+    }
     val isEditing = state.editingTaskId != null
     val context = LocalContext.current
     val dateFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.getDefault()) }

@@ -124,6 +124,46 @@ fun DashboardScreen(
     isDarkTheme: Boolean = false,
     onToggleTheme: () -> Unit = {}
 ) {
+    val xp by rewardsViewModel.xp.collectAsState()
+    val level by rewardsViewModel.level.collectAsState(initial = 1)
+    DashboardScreenForTest(
+        state = state,
+        snackbarHostState = snackbarHostState,
+        onAddTaskClick = onAddTaskClick,
+        onManageSubjectsClick = onManageSubjectsClick,
+        onAlarmSettingsClick = onAlarmSettingsClick,
+        onTaskClick = onTaskClick,
+        onTaskCompleted = onTaskCompleted,
+        focusAlertsEnabled = focusAlertsEnabled,
+        onFocusAlertsToggle = onFocusAlertsToggle,
+        isDarkTheme = isDarkTheme,
+        onToggleTheme = onToggleTheme,
+        xp = xp,
+        level = level
+    )
+}
+
+/**
+ * Versión testeable del Dashboard que no depende de ViewModels.
+ * Permite pruebas de UI aisladas con valores mock.
+ */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@Composable
+fun DashboardScreenForTest(
+    state: DashboardUiState,
+    snackbarHostState: SnackbarHostState,
+    onAddTaskClick: () -> Unit,
+    onManageSubjectsClick: () -> Unit,
+    onAlarmSettingsClick: (String) -> Unit,
+    onTaskClick: (String) -> Unit,
+    onTaskCompleted: (String) -> Unit,
+    focusAlertsEnabled: Boolean,
+    onFocusAlertsToggle: (Boolean) -> Unit,
+    isDarkTheme: Boolean = false,
+    onToggleTheme: () -> Unit = {},
+    xp: Int = 0,
+    level: Int = 1
+) {
     // Show/hide the focus settings dialog when the user taps the settings icon.
     var showFocusSettingsDialog by remember { mutableStateOf(false) }
     Scaffold(
@@ -174,8 +214,6 @@ fun DashboardScreen(
             }
             item {
                     // Reward bar showing XP and level
-                    val xp by rewardsViewModel.xp.collectAsState()
-                    val level by rewardsViewModel.level.collectAsState(initial = 1)
                     val progress = (xp % (maxOf(1, level * 100))).toFloat() / (level * 100).toFloat()
                     com.example.unitask.presentation.ui.components.RewardsBar(xp = xp, level = level, progressFraction = progress)
             }

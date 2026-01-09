@@ -28,6 +28,12 @@ class SubjectsViewModel(
     private val _events = MutableSharedFlow<SubjectsEvent>()
     val events = _events
 
+    companion object {
+        const val MAX_NAME_LENGTH = 30
+        const val MAX_TEACHER_LENGTH = 40
+        private val HEX_COLOR_REGEX = Regex("^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$")
+    }
+
     init {
         viewModelScope.launch {
             getSubjectsUseCase()
@@ -43,17 +49,42 @@ class SubjectsViewModel(
     }
 
     fun addSubject(name: String, colorHex: String, teacher: String?) {
+        val validationError = validateSubjectInput(name, colorHex, teacher)
+        if (validationError != null) {
+            viewModelScope.launch { emitError(validationError) }
+            return
+        }
+
         viewModelScope.launch {
-            runCatching { addSubjectUseCase(name, colorHex, teacher) }
+            runCatching { addSubjectUseCase(name.trim(), colorHex.trim(), teacher?.trim()) }
                 .onFailure { error -> emitError(error.message) }
         }
     }
 
     fun editSubject(subjectId: String, name: String, colorHex: String, teacher: String?) {
+        val validationError = validateSubjectInput(name, colorHex, teacher)
+        if (validationError != null) {
+            viewModelScope.launch { emitError(validationError) }
+            return
+        }
+
         viewModelScope.launch {
-            runCatching { editSubjectUseCase(subjectId, name, colorHex, teacher) }
+            runCatching { editSubjectUseCase(subjectId, name.trim(), colorHex.trim(), teacher?.trim()) }
                 .onFailure { error -> emitError(error.message) }
         }
+    }
+
+    private fun validateSubjectInput(name: String, colorHex: String, teacher: String?): String? {
+        if (name.isBlank()) return "El nombre es requerido."
+        if (name.length > MAX_NAME_LENGTH) return "El nombre no puede exceder $MAX_NAME_LENGTH caracteres."
+        
+        if (colorHex.isBlank()) return "El color es requerido."
+        if (!colorHex.matches(HEX_COLOR_REGEX)) return "Formato de color inválido (ej. #FF0000)."
+        
+        if (teacher != null && teacher.length > MAX_TEACHER_LENGTH) {
+            return "El nombre del profesor es demasiado largo."
+        }
+        return null
     }
 
     fun deleteSubject(subjectId: String, cascade: Boolean = true) {

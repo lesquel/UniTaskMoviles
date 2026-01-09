@@ -41,6 +41,10 @@ class AddTaskViewModel(
     val events = _events
     private var editingTask: Task? = null
 
+    companion object {
+        const val MAX_TITLE_LENGTH = 50
+    }
+
     init {
         resetDueDateDefaults()
         viewModelScope.launch {
@@ -55,6 +59,10 @@ class AddTaskViewModel(
     }
 
     fun onTitleChanged(value: String) {
+        if (value.length > MAX_TITLE_LENGTH) {
+            _uiState.updateDetails { copy(errorMessage = "El título no puede exceder $MAX_TITLE_LENGTH caracteres.") }
+            return
+        }
         _uiState.updateDetails { copy(title = value, errorMessage = null) }
     }
 
@@ -75,9 +83,25 @@ class AddTaskViewModel(
         val subjectId = current.selectedSubjectId
         val date = current.dueDate
         val time = current.dueTime
+        val rawTitle = current.title.trim()
 
-        if (subjectId == null || date == null || time == null) {
-            _uiState.updateDetails { copy(errorMessage = "Falta información obligatoria.") }
+        if (rawTitle.isBlank()) {
+            _uiState.updateDetails { copy(errorMessage = "El título es requerido.") }
+            return
+        }
+
+        if (rawTitle.length > MAX_TITLE_LENGTH) {
+            _uiState.updateDetails { copy(errorMessage = "El título es demasiado largo.") }
+            return
+        }
+
+        if (subjectId == null) {
+            _uiState.updateDetails { copy(errorMessage = "Debes seleccionar una asignatura.") }
+            return
+        }
+
+        if (date == null || time == null) {
+            _uiState.updateDetails { copy(errorMessage = "Fecha y hora son requeridas.") }
             return
         }
 
@@ -88,7 +112,7 @@ class AddTaskViewModel(
             runCatching {
                 if (current.editingTaskId != null && editingTask != null) {
                     val updatedTask = editingTask!!.copy(
-                        title = current.title,
+                        title = rawTitle,
                         subjectId = subjectId,
                         dueDateTime = dueDateTime
                     )
@@ -96,7 +120,7 @@ class AddTaskViewModel(
                     updatedTask
                 } else {
                     addTaskUseCase(
-                        title = current.title,
+                        title = rawTitle,
                         subjectId = subjectId,
                         dueDateTime = dueDateTime
                     )

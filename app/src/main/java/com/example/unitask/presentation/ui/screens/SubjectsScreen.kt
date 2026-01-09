@@ -86,7 +86,7 @@ fun SubjectsRoute(
         viewModel.consumeError()
     }
 
-    SubjectsScreen(
+    SubjectsScreenForTest(
         state = state,
         snackbarHostState = snackbarHostState,
         onBack = onBack,
@@ -132,11 +132,12 @@ fun SubjectsRoute(
 }
 
 /**
- * Layout principal que muestra materias en tarjeta y brinda acceso rápido a agregar nuevas.
+ * Versión testeable de SubjectsScreen que no depende de ViewModels ni diálogos internos.
+ * Permite pruebas de UI aisladas con callbacks directos.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SubjectsScreen(
+fun SubjectsScreenForTest(
     state: SubjectsUiState,
     snackbarHostState: SnackbarHostState,
     onBack: () -> Unit,

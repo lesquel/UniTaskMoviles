@@ -34,6 +34,7 @@ fun FocusSensorBanner(
 ) {
     val messageRes = when {
         state.isDark -> R.string.focus_banner_dark_message
+        state.isDeviceInMotion -> R.string.focus_banner_motion_message
         state.isUserPresent -> R.string.focus_banner_proximity_message
         else -> null
     }
