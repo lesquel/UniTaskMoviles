@@ -5,6 +5,7 @@
 Las **pruebas de interfaz de usuario (UI Testing)** son tests automatizados que validan el comportamiento visual e interactivo de una aplicación desde la perspectiva del usuario. A diferencia de las pruebas unitarias que evalúan funciones aisladas, las pruebas de UI simulan cómo un usuario real interactúa con la app.
 
 ### Características principales:
+
 - **Ejecutan en un dispositivo real o emulador**: Necesitan el contexto completo de Android
 - **Simulan interacciones de usuario**: Clics, escritura, scrolling, gestos
 - **Validan elementos visuales**: Textos, botones, imágenes, estados
@@ -13,6 +14,7 @@ Las **pruebas de interfaz de usuario (UI Testing)** son tests automatizados que 
 ## 🎯 ¿Qué Validan las Pruebas de UI?
 
 ### 1. **Botones y Acciones**
+
 ```kotlin
 // Verificar que un botón existe y es clickeable
 composeRule.onNodeWithContentDescription("Agregar tarea")
@@ -21,12 +23,14 @@ composeRule.onNodeWithContentDescription("Agregar tarea")
 ```
 
 ### 2. **Textos y Labels**
+
 ```kotlin
 // Verificar que un texto se muestra correctamente
 composeRule.onNodeWithText("Nueva Tarea").assertIsDisplayed()
 ```
 
 ### 3. **Navegación**
+
 ```kotlin
 // Verificar navegación después de un clic
 composeRule.onNodeWithText("Agregar").performClick()
@@ -34,12 +38,14 @@ composeRule.onNodeWithText("Crear Tarea").assertIsDisplayed()
 ```
 
 ### 4. **Estados de la UI**
+
 ```kotlin
 // Verificar estado vacío
 composeRule.onNodeWithText("No hay tareas pendientes").assertIsDisplayed()
 ```
 
 ### 5. **Formularios**
+
 ```kotlin
 // Verificar entrada de texto
 composeRule.onNodeWithTag("titulo_tarea")
@@ -51,15 +57,16 @@ composeRule.onNodeWithTag("titulo_tarea")
 
 ### ¿Por qué son críticas?
 
-| Aspecto | Sin UI Testing | Con UI Testing |
-|---------|----------------|----------------|
-| Regresiones visuales | No detectadas | Detectadas automáticamente |
-| Experiencia de usuario | Incierta | Validada |
-| Tiempo de QA manual | Alto | Reducido |
-| Confianza en releases | Baja | Alta |
-| Navegación rota | Descubierta por usuarios | Descubierta en CI/CD |
+| Aspecto                | Sin UI Testing           | Con UI Testing             |
+| ---------------------- | ------------------------ | -------------------------- |
+| Regresiones visuales   | No detectadas            | Detectadas automáticamente |
+| Experiencia de usuario | Incierta                 | Validada                   |
+| Tiempo de QA manual    | Alto                     | Reducido                   |
+| Confianza en releases  | Baja                     | Alta                       |
+| Navegación rota        | Descubierta por usuarios | Descubierta en CI/CD       |
 
 ### Beneficios específicos para móviles:
+
 1. **Fragmentación de dispositivos**: Validan comportamiento en diferentes tamaños de pantalla
 2. **Ciclos de release rápidos**: Permiten releases frecuentes con confianza
 3. **Interacciones complejas**: Validan gestos, animaciones, transiciones
@@ -78,15 +85,15 @@ dependencies {
 
 ### Componentes clave:
 
-| Componente | Descripción |
-|------------|-------------|
-| `createComposeRule()` | Crea el entorno de testing |
-| `onNodeWithText()` | Busca elementos por texto |
+| Componente                       | Descripción                            |
+| -------------------------------- | -------------------------------------- |
+| `createComposeRule()`            | Crea el entorno de testing             |
+| `onNodeWithText()`               | Busca elementos por texto              |
 | `onNodeWithContentDescription()` | Busca por descripción de accesibilidad |
-| `onNodeWithTag()` | Busca por test tag |
-| `assertIsDisplayed()` | Verifica visibilidad |
-| `performClick()` | Simula clic |
-| `performTextInput()` | Escribe texto |
+| `onNodeWithTag()`                | Busca por test tag                     |
+| `assertIsDisplayed()`            | Verifica visibilidad                   |
+| `performClick()`                 | Simula clic                            |
+| `performTextInput()`             | Escribe texto                          |
 
 ---
 
@@ -95,17 +102,19 @@ dependencies {
 ### Pantallas Clave que Deben Probarse
 
 #### 1. **DashboardScreen** (Pantalla Principal)
+
 - **Elementos a validar:**
   - Lista de tareas urgentes
   - Lista de todas las tareas
   - Botón flotante para agregar tarea
   - Estado vacío cuando no hay tareas
   - Barra de recompensas (XP y nivel)
-  
 - **Archivo de test:** `DashboardScreenTest.kt`
 
 #### 2. **AddTaskScreen** (Crear/Editar Tarea)
+
 - **Elementos a validar:**
+
   - Campo de título
   - Selector de materia
   - Selectores de fecha y hora
@@ -116,7 +125,9 @@ dependencies {
 - **Archivo de test:** `AddTaskScreenTest.kt`
 
 #### 3. **SubjectsScreen** (Gestión de Materias)
+
 - **Elementos a validar:**
+
   - Lista de materias
   - FAB para agregar materia
   - Diálogo de creación/edición
@@ -126,7 +137,9 @@ dependencies {
 - **Archivo de test:** `SubjectsScreenTest.kt`
 
 #### 4. **Navegación**
+
 - **Flujos a validar:**
+
   - Dashboard → AddTask
   - Dashboard → Subjects
   - AddTask → Dashboard (back)
@@ -135,6 +148,7 @@ dependencies {
 - **Archivo de test:** `NavigationTest.kt`
 
 #### 5. **Componentes Reutilizables**
+
 - **TaskCard:** Tarjeta de tarea con acciones
 - **EmptyState:** Estado vacío
 - **RewardsBar:** Barra de progreso
@@ -146,6 +160,7 @@ dependencies {
 ## ⚠️ ¿Qué Pasaría si Fallan? (Ejemplos Reales)
 
 ### Escenario 1: FAB de Agregar Tarea No Funciona
+
 ```kotlin
 @Test
 fun fabNotClickable_userCannotCreateTasks() {
@@ -153,14 +168,16 @@ fun fabNotClickable_userCannotCreateTasks() {
     composeRule.onNodeWithContentDescription("Agregar tarea")
         .assertIsDisplayed()
         .performClick()
-    
+
     // Debería navegar a AddTaskScreen
     composeRule.onNodeWithText("Nueva Tarea").assertIsDisplayed()
 }
 ```
+
 **Impacto:** 🔴 CRÍTICO - La funcionalidad principal de la app está rota
 
 ### Escenario 2: Validación de Formulario No Aparece
+
 ```kotlin
 @Test
 fun emptyTitle_showsValidationError() {
@@ -169,9 +186,11 @@ fun emptyTitle_showsValidationError() {
     composeRule.onNodeWithText("El título es requerido").assertIsDisplayed()
 }
 ```
+
 **Impacto:** 🟠 ALTO - Datos corruptos en la base de datos
 
 ### Escenario 3: Estado Vacío No Se Muestra
+
 ```kotlin
 @Test
 fun noTasks_showsEmptyState() {
@@ -179,9 +198,11 @@ fun noTasks_showsEmptyState() {
     composeRule.onNodeWithText("No hay tareas").assertIsDisplayed()
 }
 ```
+
 **Impacto:** 🟡 MEDIO - Mala experiencia de usuario, confusión
 
 ### Escenario 4: Navegación de Retroceso Rota
+
 ```kotlin
 @Test
 fun backButton_returnsToPresiousScreen() {
@@ -190,6 +211,7 @@ fun backButton_returnsToPresiousScreen() {
     composeRule.onNodeWithText("Dashboard").assertIsDisplayed()
 }
 ```
+
 **Impacto:** 🔴 CRÍTICO - Usuario debe cerrar la app para salir
 
 ---
@@ -216,10 +238,12 @@ app/src/androidTest/java/com/example/unitask/
 ## 🚀 Cómo Ejecutar las Pruebas
 
 ### Desde Android Studio
+
 1. Click derecho en el paquete `androidTest`
 2. Seleccionar "Run Tests in..."
 
 ### Desde Terminal
+
 ```bash
 # Ejecutar todos los tests de UI
 ./gradlew connectedAndroidTest
@@ -229,6 +253,7 @@ app/src/androidTest/java/com/example/unitask/
 ```
 
 ### Requisitos
+
 - Emulador corriendo o dispositivo conectado
 - API level 24+ (minSdk del proyecto)
 
@@ -250,16 +275,19 @@ El reporte se genera en:
 ## ✅ Best Practices Implementadas
 
 1. **Test Tags para elementos clave**
+
    ```kotlin
    Modifier.testTag("fab_add_task")
    ```
 
 2. **Descripción de contenido para accesibilidad**
+
    ```kotlin
    contentDescription = stringResource(R.string.add_task)
    ```
 
 3. **Estados predecibles en tests**
+
    ```kotlin
    // Usamos estados mock en lugar de ViewModels reales
    DashboardScreen(state = DashboardUiState(...))
