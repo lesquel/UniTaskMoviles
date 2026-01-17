@@ -33,7 +33,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,6 +44,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.animation.animateContentSize
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.unitask.di.AppModule
 import com.example.unitask.presentation.ui.components.EmptyState
@@ -73,9 +73,9 @@ fun DashboardRoute(
     isDarkTheme: Boolean = false,
     onToggleTheme: () -> Unit = {}
 ) {
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-    val focusAlertsEnabled by focusSensorSettingsRepository.focusAlertsEnabled.collectAsState(initial = true)
+    val focusAlertsEnabled by focusSensorSettingsRepository.focusAlertsEnabled.collectAsStateWithLifecycle(initialValue = true)
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(state.errorMessage) {
@@ -124,8 +124,8 @@ fun DashboardScreen(
     isDarkTheme: Boolean = false,
     onToggleTheme: () -> Unit = {}
 ) {
-    val xp by rewardsViewModel.xp.collectAsState()
-    val level by rewardsViewModel.level.collectAsState(initial = 1)
+    val xp by rewardsViewModel.xp.collectAsStateWithLifecycle()
+    val level by rewardsViewModel.level.collectAsStateWithLifecycle(initialValue = 1)
     DashboardScreenForTest(
         state = state,
         snackbarHostState = snackbarHostState,

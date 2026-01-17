@@ -90,4 +90,10 @@
     <string name="rewards_level_label">Nivel %1$d</string>
     <string name="rewards_earn_button">Ganar XP</string>
     <string name="rewards_reset_button">Reiniciar XP</string>
+    <string name="error_title_too_long">El título no puede exceder %1$d caracteres.</string>
+    <string name="error_title_max_len">El título es demasiado largo.</string>
+    <string name="error_title_required">El título es requerido.</string>
+    <string name="error_subject_required">Debes seleccionar una asignatura.</string>
+    <string name="error_datetime_required">Fecha y hora son requeridas.</string>
+    <string name="error_save_generic">Error al guardar</string>
 </resources>

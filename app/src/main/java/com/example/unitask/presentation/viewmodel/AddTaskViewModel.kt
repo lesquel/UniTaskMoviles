@@ -60,22 +60,22 @@ class AddTaskViewModel(
 
     fun onTitleChanged(value: String) {
         if (value.length > MAX_TITLE_LENGTH) {
-            _uiState.updateDetails { copy(errorMessage = "El título no puede exceder $MAX_TITLE_LENGTH caracteres.") }
+            _uiState.updateDetails { copy(error = AddTaskError.TitleTooLong) }
             return
         }
-        _uiState.updateDetails { copy(title = value, errorMessage = null) }
+        _uiState.updateDetails { copy(title = value, error = null) }
     }
 
     fun onSubjectSelected(subjectId: String) {
-        _uiState.updateDetails { copy(selectedSubjectId = subjectId, errorMessage = null) }
+        _uiState.updateDetails { copy(selectedSubjectId = subjectId, error = null) }
     }
 
     fun onDateSelected(date: LocalDate) {
-        _uiState.updateDetails { copy(dueDate = date, errorMessage = null) }
+        _uiState.updateDetails { copy(dueDate = date, error = null) }
     }
 
     fun onTimeSelected(time: LocalTime) {
-        _uiState.updateDetails { copy(dueTime = time, errorMessage = null) }
+        _uiState.updateDetails { copy(dueTime = time, error = null) }
     }
 
     fun submit() {
@@ -86,29 +86,29 @@ class AddTaskViewModel(
         val rawTitle = current.title.trim()
 
         if (rawTitle.isBlank()) {
-            _uiState.updateDetails { copy(errorMessage = "El título es requerido.") }
+            _uiState.updateDetails { copy(error = AddTaskError.TitleRequired) }
             return
         }
 
         if (rawTitle.length > MAX_TITLE_LENGTH) {
-            _uiState.updateDetails { copy(errorMessage = "El título es demasiado largo.") }
+            _uiState.updateDetails { copy(error = AddTaskError.TitleTooLong) }
             return
         }
 
         if (subjectId == null) {
-            _uiState.updateDetails { copy(errorMessage = "Debes seleccionar una asignatura.") }
+            _uiState.updateDetails { copy(error = AddTaskError.SubjectRequired) }
             return
         }
 
         if (date == null || time == null) {
-            _uiState.updateDetails { copy(errorMessage = "Fecha y hora son requeridas.") }
+            _uiState.updateDetails { copy(error = AddTaskError.DateTimeRequired) }
             return
         }
 
         val dueDateTime = LocalDateTime.of(date, time)
 
         viewModelScope.launch {
-            _uiState.updateDetails { copy(isSubmitting = true, errorMessage = null) }
+            _uiState.updateDetails { copy(isSubmitting = true, error = null) }
             runCatching {
                 if (current.editingTaskId != null && editingTask != null) {
                     val updatedTask = editingTask!!.copy(
@@ -136,8 +136,9 @@ class AddTaskViewModel(
                     ).withDefaultDueDate()
                 }
                 .onFailure { error ->
-                    _uiState.updateDetails { copy(isSubmitting = false, errorMessage = error.message) }
-                    _events.emit(AddTaskEvent.Error(error.message ?: "Error al guardar"))
+                    val submitError = AddTaskError.SubmitError(error.message ?: "Error al guardar")
+                    _uiState.updateDetails { copy(isSubmitting = false, error = submitError) }
+                    _events.emit(AddTaskEvent.Error(submitError))
                 }
         }
     }
@@ -172,7 +173,7 @@ class AddTaskViewModel(
         viewModelScope.launch {
             val task = getTaskByIdUseCase(taskId)
             if (task == null) {
-                _uiState.updateDetails { copy(errorMessage = "Tarea no encontrada.") }
+                _uiState.updateDetails { copy(error = AddTaskError.SubmitError("Tarea no encontrada.")) }
                 return@launch
             }
             editingTask = task
@@ -183,7 +184,7 @@ class AddTaskViewModel(
                     dueDate = task.dueDateTime.toLocalDate(),
                     dueTime = task.dueDateTime.toLocalTime(),
                     editingTaskId = task.id,
-                    errorMessage = null
+                    error = null
                 )
             }
         }
@@ -197,9 +198,17 @@ data class AddTaskUiState(
     val dueTime: LocalTime? = null,
     val subjects: List<SubjectOption> = emptyList(),
     val isSubmitting: Boolean = false,
-    val errorMessage: String? = null,
+    val error: AddTaskError? = null,
     val editingTaskId: String? = null
 )
+
+sealed interface AddTaskError {
+    data object TitleRequired : AddTaskError
+    data object TitleTooLong : AddTaskError
+    data object SubjectRequired : AddTaskError
+    data object DateTimeRequired : AddTaskError
+    data class SubmitError(val message: String) : AddTaskError
+}
 
 data class SubjectOption(
     val id: String,
@@ -209,5 +218,5 @@ data class SubjectOption(
 
 sealed class AddTaskEvent {
     data class Success(val taskId: String, val isUpdate: Boolean) : AddTaskEvent()
-    data class Error(val message: String) : AddTaskEvent()
+    data class Error(val error: AddTaskError) : AddTaskEvent()
 }

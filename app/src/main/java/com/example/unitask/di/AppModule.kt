@@ -5,11 +5,13 @@ import android.content.Context
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.example.unitask.data.repository.InMemorySubjectRepository
-import com.example.unitask.data.repository.InMemoryTaskRepository
+import androidx.room.Room
+import com.example.unitask.data.repository.RoomSubjectRepository
+import com.example.unitask.data.repository.RoomTaskRepository
 import com.example.unitask.data.repository.SampleData
 import com.example.unitask.data.repository.SharedPrefsNotificationRepository
 import com.example.unitask.data.repository.SharedPrefsRewardRepository
+import com.example.unitask.data.room.UniTaskDatabase
 import com.example.unitask.domain.repository.NotificationRepository
 import com.example.unitask.domain.repository.RewardRepository
 import com.example.unitask.domain.repository.SubjectRepository
@@ -45,14 +47,19 @@ import java.time.LocalDateTime
  */
 object AppModule {
 
+    private var _database: UniTaskDatabase? = null
+
+    // Helper to access DB safely
+    private val database: UniTaskDatabase
+        get() = _database ?: throw IllegalStateException("AppModule not configured: call configureAppModule(context)")
+
     // Data sources
-    // In-memory repositories simulate persistent storage for subjects/tasks during demo.
     private val subjectRepository: SubjectRepository by lazy {
-        InMemorySubjectRepository(SampleData.subjects())
+        RoomSubjectRepository(database.subjectDao)
     }
 
     private val taskRepository: TaskRepository by lazy {
-        InMemoryTaskRepository(SampleData.tasks())
+        RoomTaskRepository(database.taskDao)
     }
 
     // Use cases
@@ -160,6 +167,16 @@ object AppModule {
 
     fun configureAppModule(context: Context) {
         _appContext = context.applicationContext
+
+        // Initialize Room Database
+        if (_database == null) {
+            _database = Room.databaseBuilder(
+                context.applicationContext,
+                UniTaskDatabase::class.java,
+                "unitask_database"
+            ).build()
+        }
+
         // Lazily create shared services so they survive the app lifecycle.
         if (_alarmScheduler == null) {
             val alarmManager =

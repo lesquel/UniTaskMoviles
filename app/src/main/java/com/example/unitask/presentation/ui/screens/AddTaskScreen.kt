@@ -53,6 +53,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.unitask.di.AppModule
 import com.example.unitask.presentation.viewmodel.AddTaskEvent
 import com.example.unitask.presentation.viewmodel.AddTaskUiState
+import com.example.unitask.presentation.viewmodel.AddTaskError
 import com.example.unitask.presentation.viewmodel.AddTaskViewModel
 import com.example.unitask.presentation.viewmodel.SubjectOption
 import java.time.LocalDate
@@ -87,8 +88,12 @@ fun AddTaskRoute(
                     onTaskSaved()
                 }
                 is AddTaskEvent.Error -> {
+                    val message = when (val error = event.error) {
+                        is AddTaskError.SubmitError -> error.message
+                        else -> context.getString(com.example.unitask.R.string.error_save_generic)
+                    }
                     snackbarHostState.showSnackbar(
-                        message = event.message,
+                        message = message,
                         duration = SnackbarDuration.Short
                     )
                 }
@@ -197,8 +202,15 @@ fun AddTaskScreen(
                     ).show()
                 }
             )
-            state.errorMessage?.let { error ->
-                Text(text = error, color = MaterialTheme.colorScheme.error)
+            state.error?.let { error ->
+                val errorText = when (error) {
+                    AddTaskError.TitleRequired -> stringResource(id = com.example.unitask.R.string.error_title_required)
+                    AddTaskError.TitleTooLong -> stringResource(id = com.example.unitask.R.string.error_title_too_long, AddTaskViewModel.MAX_TITLE_LENGTH)
+                    AddTaskError.SubjectRequired -> stringResource(id = com.example.unitask.R.string.error_subject_required)
+                    AddTaskError.DateTimeRequired -> stringResource(id = com.example.unitask.R.string.error_datetime_required)
+                    is AddTaskError.SubmitError -> error.message
+                }
+                Text(text = errorText, color = MaterialTheme.colorScheme.error)
             }
             Spacer(modifier = Modifier.height(16.dp))
             Row(
