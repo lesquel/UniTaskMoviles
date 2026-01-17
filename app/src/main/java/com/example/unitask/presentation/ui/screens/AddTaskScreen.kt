@@ -130,8 +130,18 @@ fun AddTaskScreen(
     onSubmit: () -> Unit,
     onAlarmSettingsClick: () -> Unit
 ) {
-    LaunchedEffect(state.errorMessage) {
-        state.errorMessage?.let { message ->
+    val errorMessage = state.error?.let { error ->
+        when (error) {
+            AddTaskError.TitleRequired -> stringResource(id = com.example.unitask.R.string.error_title_required)
+            AddTaskError.TitleTooLong -> stringResource(id = com.example.unitask.R.string.error_title_max_len)
+            AddTaskError.SubjectRequired -> stringResource(id = com.example.unitask.R.string.error_subject_required)
+            AddTaskError.DateTimeRequired -> stringResource(id = com.example.unitask.R.string.error_datetime_required)
+            is AddTaskError.SubmitError -> error.message
+        }
+    }
+
+    LaunchedEffect(errorMessage) {
+        errorMessage?.let { message ->
             snackbarHostState.showSnackbar(message)
         }
     }
