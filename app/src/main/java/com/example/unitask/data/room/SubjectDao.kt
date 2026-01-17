@@ -7,8 +7,14 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 
+/**
+ * Data Access Object for the 'subjects' table.
+ */
 @Dao
 interface SubjectDao {
+    /**
+     * Observes all configured subjects.
+     */
     @Query("SELECT * FROM subjects")
     fun getAllSubjects(): Flow<List<SubjectEntity>>
 

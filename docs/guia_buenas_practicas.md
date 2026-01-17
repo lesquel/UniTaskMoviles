@@ -81,40 +81,272 @@ Existe una correlación directa:
 
 ## 5. Aplicación al proyecto UniTask
 
-En esta actualización del proyecto, se han aplicado y mejorado los siguientes aspectos:
+En esta actualización del proyecto, se han aplicado prácticas de optimización y arquitectura para asegurar la robustez, el rendimiento y la mantenibilidad de la aplicación. A continuación se documenta en detalle la estructura del proyecto y los cambios implementados, incluyendo el código fuente relevante.
 
-### Identificación de 3 buenas prácticas preexistentes
+### Estructura del Proyecto
 
-1.  **Arquitectura Limpia (Clean Architecture):** El proyecto ya separaba claramente `Domain` (UseCases), `Data` (Repositories) y `Presentation` (ViewModels).
-    - _Evidencia:_ `AddTaskUseCase` encapsula la lógica de creación.
-2.  **State Hoisting:** Separación entre `DashboardRoute` (con lógica) y `DashboardScreen` (puramente visual).
-    - _Ubicación:_ `presentation/ui/screens/DashboardScreen.kt`.
-3.  **Inyección de Dependencias Manual:** Uso de `AppModule` para proveer instancias únicas de repositorios y ViewModels, facilitando el testing.
+El proyecto sigue una arquitectura limpia (Clean Architecture) con separación de capas: `domain`, `data`, y `presentation`.
 
-### Identificación de 2 aspectos mejorados (Implementados)
+```text
+c:\Users\lesqu\AndroidStudioProjects\UniTask\app\src\main\java\com\example\unitask
+│   MainActivity.kt
+│
+├───data  (Capa de Datos: Repositorios y Fuentes de Datos)
+│   ├───repository
+│   │       RoomTaskRepository.kt       <-- NUEVO: Implementación con Room
+│   │       RoomSubjectRepository.kt    <-- NUEVO: Implementación con Room
+│   │       SharedPrefsNotificationRepository.kt
+│   │       ...
+│   └───room                            <-- NUEVO: Paquete para Room Database
+│           UniTaskDatabase.kt          <-- Base de Datos Principal
+│           TaskDao.kt                  <-- Data Access Object para Tareas
+│           TaskEntity.kt               <-- Tabla Tareas (SQL)
+│           SubjectDao.kt               <-- Data Access Object para Asignaturas
+│           SubjectEntity.kt            <-- Tabla Asignaturas (SQL)
+│           Converters.kt               <-- Convertidores de Tipos (Fechas)
+│
+├───di    (Inyección de Dependencias)
+│       AppModule.kt                    <-- ACTUALIZADO: Provee la BD y Repositorios
+│
+├───domain (Capa de Dominio: Reglas de Negocio)
+│   ├───model
+│   │       Task.kt
+│   │       Subject.kt
+│   └───usecase                         <-- Casos de Uso (Lógica Pura)
+│           AddTaskUseCase.kt
+│           ...
+│
+└───presentation (Capa de Presentación: UI y ViewModels)
+    ├───ui
+    │   ├───screens
+    │   │       DashboardScreen.kt      <-- OPTIMIZADO: Ciclo de Vida
+    │   │       AddTaskScreen.kt        <-- MEJORADO: Manejo de Errores
+    │   │       ...
+    └───viewmodel
+            AddTaskViewModel.kt         <-- REFACTORIZADO: Validaciones
+            ...
+```
 
-Se detectaron áreas de mejora crítica y se refactorizaron:
+---
 
-#### 1. Persistencia Real con Room (Optimización de Datos)
+### Detalle de Implementación y Archivos Modificados
 
-- **Antes:** Se usaba `InMemoryTaskRepository`, perdiendo los datos al cerrar la app.
-- **Mejora:** Se implementó `UniTaskDatabase`, `TaskDao`, `SubjectDao` y entidades (`TaskEntity`).
-- **Código modificado:**
-  - Creación de `data/room/UniTaskDatabase.kt`.
-  - Refactorización de `di/AppModule.kt` para inicializar la base de datos.
+A continuación se detalla cada componente implementado para cumplir con los objetivos de optimización.
 
-#### 2. Recolección de Estado Consciente del Ciclo de Vida (Optimización de UI)
+#### 1. Persistencia de Datos (Room) - _Optimización de Datos_
 
-- **Antes:** Se usaba `collectAsState()` en `DashboardRoute`. Esto mantenía la suscripción al flujo activa incluso si la app estaba en "Stop" (segundo plano), desperdiciando recursos.
-- **Mejora:** Cambio a `collectAsStateWithLifecycle()`.
-- **Beneficio:** La UI deja de procesar actualizaciones cuando no es visible, ahorrando batería.
-- **Ubicación:** `presentation/ui/screens/DashboardScreen.kt`.
+**Objetivo:** Reemplazar el almacenamiento en memoria volátil por una base de datos SQLite persistente, garantizando que los datos sobrevivan al cierre de la aplicación.
 
-#### 3. Extracción de Strings y Manejo de Errores (Calidad de Código)
+**Archivos Implementados:**
 
-- **Antes:** `AddTaskViewModel` contenía strings "hardcoded" (`"El título es requerido"`).
-- **Mejora:** Se creó una interfaz `AddTaskError` y se movieron los textos a `strings.xml`.
-- **Beneficio:** Soporte para traducción (i18n) y separación de lógica (ViewModel) de la presentación (Texto UI).
+**`data/room/UniTaskDatabase.kt`**
+Define la conexión a la base de datos y expone los DAOs.
+
+```kotlin
+package com.example.unitask.data.room
+
+import androidx.room.Database
+import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
+
+/**
+ * The main database holder for the application.
+ * Manages the connection to the SQLite database and provides DAOs.
+ */
+@Database(
+    entities = [TaskEntity::class, SubjectEntity::class],
+    version = 1,
+    exportSchema = false
+)
+// Registers custom type converters (e.g. for LocalDateTime <-> String).
+@TypeConverters(Converters::class)
+abstract class UniTaskDatabase : RoomDatabase() {
+    abstract val taskDao: TaskDao
+    abstract val subjectDao: SubjectDao
+}
+```
+
+**`data/room/TaskEntity.kt`**
+Modela la tabla `tasks` en SQL. Se utiliza una **Foreign Key** con `CASCADE` para mantener la integridad referencial: si se borra una asignatura, se borran sus tareas.
+
+```kotlin
+package com.example.unitask.data.room
+
+import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
+import androidx.room.PrimaryKey
+import com.example.unitask.domain.model.Task
+import java.time.LocalDateTime
+
+@Entity(
+    tableName = "tasks",
+    foreignKeys = [
+        ForeignKey(
+            entity = SubjectEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["subjectId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    // Indexing foreign keys is a best practice for query performance.
+    indices = [Index(value = ["subjectId"])]
+)
+data class TaskEntity(
+    @PrimaryKey
+    val id: String,
+    val title: String,
+    val subjectId: String,
+    val dueDateTime: LocalDateTime,
+    val createdAt: LocalDateTime,
+    val isCompleted: Boolean
+)
+
+// Mapping extensions
+fun TaskEntity.toDomain(): Task {
+    return Task(
+        id = id,
+        title = title,
+        subjectId = subjectId,
+        dueDateTime = dueDateTime,
+        createdAt = createdAt,
+        isCompleted = isCompleted
+    )
+}
+
+fun Task.toEntity(): TaskEntity {
+    return TaskEntity(
+        id = id,
+        title = title,
+        subjectId = subjectId,
+        dueDateTime = dueDateTime,
+        createdAt = createdAt,
+        isCompleted = isCompleted
+    )
+}
+```
+
+**`data/repository/RoomTaskRepository.kt`**
+Implementa el patrón repositorio conectando la base de datos (Data Layer) con el dominio. Utiliza `Flow` para actualizaciones reactivas.
+
+```kotlin
+package com.example.unitask.data.repository
+
+import com.example.unitask.data.room.TaskDao
+import com.example.unitask.data.room.toDomain
+import com.example.unitask.data.room.toEntity
+import com.example.unitask.domain.model.Task
+import com.example.unitask.domain.repository.TaskRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+
+/**
+ * [TaskRepository] implementation using Room as the persistent data source.
+ */
+class RoomTaskRepository(private val taskDao: TaskDao) : TaskRepository {
+
+    override fun getTasksFlow(): Flow<List<Task>> {
+        return taskDao.getAllTasks().map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
+
+    override suspend fun addTask(task: Task) {
+        taskDao.insertTask(task.toEntity())
+    }
+
+    // ... completeTask, deleteTask implementation ...
+}
+```
+
+#### 2. Inyección de Dependencias - _Configuración Global_
+
+**Objetivo:** Proveer la instancia única de la base de datos a toda la aplicación.
+
+**Archivo Modificado: `di/AppModule.kt`**
+Se modificó para inicializar la base de datos Room en lugar de los repositorios en memoria.
+
+```kotlin
+object AppModule {
+
+    private var _database: UniTaskDatabase? = null
+
+    // Helper to access DB safely
+    private val database: UniTaskDatabase
+        get() = _database ?: throw IllegalStateException("AppModule not configured")
+
+    // Data sources: Ahora usan Room
+    private val subjectRepository: SubjectRepository by lazy {
+        RoomSubjectRepository(database.subjectDao)
+    }
+
+    private val taskRepository: TaskRepository by lazy {
+        RoomTaskRepository(database.taskDao)
+    }
+
+    fun configureAppModule(context: Context) {
+        _appContext = context.applicationContext
+
+        // Initialize Room Database
+        if (_database == null) {
+            _database = Room.databaseBuilder(
+                context.applicationContext,
+                UniTaskDatabase::class.java,
+                "unitask_database"
+            ).build()
+        }
+        // ...
+    }
+}
+```
+
+#### 3. Optimización de UI y Ciclo de Vida - _Eficiencia de Recursos_
+
+**Objetivo:** Evitar que la UI procese datos cuando la aplicación está en segundo plano (suspendida), ahorrando batería.
+
+**Archivo Modificado: `presentation/ui/screens/DashboardScreen.kt`**
+Se reemplazó `collectAsState` por `collectAsStateWithLifecycle`.
+
+```kotlin
+@Composable
+fun DashboardRoute(
+    viewModel: DashboardViewModel = viewModel(factory = AppModule.viewModelFactory),
+    // ...
+) {
+    // OPTIMIZACIÓN: collectAsStateWithLifecycle detiene la recolección flow
+    // cuando la app va a segundo plano (Lifecycle STOPPED).
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // ...
+}
+```
+
+#### 4. Calidad de Código - _Manejo de Errores Tipados_
+
+**Objetivo:** Eliminar "hardcoded strings" y mejorar la robustez del manejo de errores.
+
+**Archivo Modificado: `presentation/viewmodel/AddTaskViewModel.kt`**
+Se introdujo una interfaz sellada (`sealed interface`) para los errores.
+
+```kotlin
+sealed interface AddTaskError {
+    data object TitleRequired : AddTaskError
+    data object TitleTooLong : AddTaskError
+    data object SubjectRequired : AddTaskError
+    data object DateTimeRequired : AddTaskError
+    data class SubmitError(val message: String) : AddTaskError
+}
+
+// En el ViewModel:
+fun onTitleChanged(value: String) {
+    if (value.length > MAX_TITLE_LENGTH) {
+        // Uso de tipo seguro en lugar de String directo
+        _uiState.updateDetails { copy(error = AddTaskError.TitleTooLong) }
+        return
+    }
+    // ...
+}
+```
 
 ---
 

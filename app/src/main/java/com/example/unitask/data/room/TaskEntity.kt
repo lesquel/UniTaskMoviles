@@ -7,6 +7,12 @@ import androidx.room.PrimaryKey
 import com.example.unitask.domain.model.Task
 import java.time.LocalDateTime
 
+/**
+ * Room Entity representing a record in the 'tasks' table.
+ *
+ * @property subjectId Foreign Key linking to the 'subjects' table.
+ *                     If the subject is deleted, the task is also deleted (CASCADE).
+ */
 @Entity(
     tableName = "tasks",
     foreignKeys = [
@@ -17,6 +23,7 @@ import java.time.LocalDateTime
             onDelete = ForeignKey.CASCADE
         )
     ],
+    // Indexing foreign keys is a best practice for query performance.
     indices = [Index(value = ["subjectId"])]
 )
 data class TaskEntity(
@@ -29,6 +36,7 @@ data class TaskEntity(
     val isCompleted: Boolean
 )
 
+// Mapping extensions
 fun TaskEntity.toDomain(): Task {
     return Task(
         id = id,

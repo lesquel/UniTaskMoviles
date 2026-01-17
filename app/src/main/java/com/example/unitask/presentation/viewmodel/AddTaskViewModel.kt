@@ -202,6 +202,10 @@ data class AddTaskUiState(
     val editingTaskId: String? = null
 )
 
+/**
+ * Sealed interface representing all possible validation/submission errors.
+ * Using a sealed hierarchy is safer than raw strings or generic exceptions.
+ */
 sealed interface AddTaskError {
     data object TitleRequired : AddTaskError
     data object TitleTooLong : AddTaskError

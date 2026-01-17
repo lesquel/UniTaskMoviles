@@ -8,8 +8,15 @@ import com.example.unitask.domain.repository.SubjectRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
+/**
+ * [SubjectRepository] implementation using Room.
+ * Handles persistence for Subjects (Asignaturas).
+ */
 class RoomSubjectRepository(private val subjectDao: SubjectDao) : SubjectRepository {
 
+    /**
+     * Observes the subjects table and maps [SubjectEntity] list to [Subject] list.
+     */
     override fun getSubjectsFlow(): Flow<List<Subject>> {
         return subjectDao.getAllSubjects().map { entities ->
             entities.map { it.toDomain() }
