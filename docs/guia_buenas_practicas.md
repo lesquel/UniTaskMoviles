@@ -4,15 +4,15 @@
 
 ### Importancia de la optimización
 
-La optimización en aplicaciones móviles es fundamental debido a las limitaciones de los dispositivos (batería, procesamiento, memoria) y la inestabilidad de las redes. Una aplicación optimizada no solo consume menos recursos, sino que responde más rápido y es más fiable.
+La optimización en aplicaciones móviles es fundamental debido a las limitaciones inherentes de los dispositivos móviles, como la duración de la batería, la capacidad de procesamiento (CPU/GPU) y la memoria RAM limitada. Una aplicación mal optimizada puede provocar un consumo excesivo de batería, sobrecalentamiento y cierres inesperados (Force Close), lo que lleva a la desinstalación por parte del usuario.
 
-### Relación entre rendimiento, calidad y experiencia de usuario (UX)
+### Relación entre rendimiento, calidad y experiencia de usuario
 
-Existe una correlación directa:
+Existe una relación directa y crítica:
 
-- **Calidad de Código:** Un código limpio y estructurado (Clean Architecture) facilita el mantenimiento y reduce errores (bugs).
-- **Rendimiento:** Un uso eficiente del ciclo de vida y la memoria evita "crashes" y ralentizaciones (ANR).
-- **Experiencia:** El usuario percibe la fluidez. Si la app preserva sus datos y no consume batería excesiva en segundo plano, la retención del usuario mejora.
+- **Calidad de Código:** Un código limpio facilita la detección de errores y el mantenimiento a largo plazo.
+- **Rendimiento (Performance):** Tiempos de carga rápidos y animaciones fluidas (60fps) son esenciales.
+- **Experiencia de Usuario (UX):** La fluidez y la capacidad de respuesta (responsiveness) generan confianza.
 
 ---
 
@@ -20,42 +20,131 @@ Existe una correlación directa:
 
 ### Uso eficiente de memoria y recursos
 
-- **Evitar fugas de memoria:** Usar `WeakReference` si es necesario, aunque en Kotlin/Compose el uso de corutinas estructuradas (`viewModelScope`) mitiga esto.
-- **Carga diferida (Lazy Loading):** En listas largas, usar `LazyColumn` en lugar de `Column` con scroll para reciclar vistas.
-- **Imágenes:** Usar librerías como Coil o Glide que gestionan caché y redimensionamiento automático.
+En lugar de cargar todos los elementos en memoria a la vez, se deben utilizar componentes de carga diferida (Lazy Loading).
+
+**Archivo aplicado:** `presentation/ui/screens/DashboardScreen.kt`
+
+```kotlin
+// Uso de LazyColumn para reciclar vistas y no saturar la memoria con listas largas
+LazyColumn(
+    modifier = Modifier
+        .fillMaxSize()
+        .padding(innerPadding),
+    contentPadding = PaddingValues(16.dp),
+    verticalArrangement = Arrangement.spacedBy(16.dp)
+) {
+    // ... secciones de la lista
+}
+```
 
 ### Manejo adecuado del ciclo de vida
 
-- Respetar los estados del `Activity`/`Fragment` (CREATED, STARTED, RESUMED).
-- Detener operaciones costosas (GPS, animaciones, recolección de flujos) cuando la app pasa a segundo plano (`onStop`).
+Es crucial detener la recolección de flujos (Flows) cuando la aplicación pasa a segundo plano para ahorrar batería y recursos de CPU.
+
+**Archivo aplicado:** `presentation/ui/screens/DashboardScreen.kt`
+
+```kotlin
+@Composable
+fun DashboardRoute(
+    viewModel: DashboardViewModel = viewModel(factory = AppModule.viewModelFactory),
+    // ...
+) {
+    // collectAsStateWithLifecycle es consciente del ciclo de vida y pausa la recolección
+    // cuando la Activity no está al menos en estado STARTED.
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // ...
+}
+```
 
 ### Organización del código (Arquitectura MVVM)
 
-- **Separación de responsabilidades:**
-  - **Model:** Datos y lógica de negocio.
-  - **View:** UI (Compose functions).
-  - **ViewModel:** Gestor de estado intermediario.
-- Esto permite probar la lógica sin depender del framework de Android y facilita cambios futuros en la UI sin romper las reglas de negocio.
+La arquitectura Model-View-ViewModel (MVVM) separa la lógica de presentación de la interfaz de usuario.
+
+- **ViewModel:** Maneja el estado y la lógica de negocio.
+- **View (Composable):** Solo reacciona al estado.
+
+**Archivo aplicado:** `presentation/viewmodel/DashboardViewModel.kt`
+
+```kotlin
+class DashboardViewModel(
+    private val getAllTasksUseCase: GetAllTasksUseCase,
+    // ... use cases inyectados
+) : ViewModel() {
+
+    // Estado observable para la UI
+    private val _uiState = MutableStateFlow(DashboardUiState())
+    val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
+
+    // init block inicia la observación de corutinas
+    init {
+        observeDashboardData()
+    }
+
+    // Función que procesa datos en el scope del ViewModel (no bloquea UI)
+    private fun observeDashboardData() {
+        viewModelScope.launch {
+            combine(...) { ... }
+                .collect { state -> _uiState.value = state }
+        }
+    }
+}
+```
 
 ---
 
 ## 3. Buenas prácticas en interfaces (Jetpack Compose)
 
-### Uso correcto de estados
+### Uso correcto de estados en Jetpack Compose
 
-- **State Hoisting (Elevación de estado):** Mover el estado al ancestro común más cercano (generalmente el `ViewModel` o una función "Route"). Esto hace que los componentes de UI sean **stateless** (sin estado) y reutilizables.
-- **Inmutabilidad:** Los estados deben ser inmutables (`data class` con `val`) y modificarse creando copias (`copy()`), permitiendo a Compose detectar cambios eficientemente.
+Elevar el estado (State Hoisting) permite que los componentes sean reutilizables y fáciles de probar. El componente `DashboardScreen` no posee el estado, lo recibe por parámetros.
+
+**Archivo aplicado:** `presentation/ui/screens/DashboardScreen.kt`
+
+```kotlin
+// Componente Stateless (sin estado interno de negocio)
+@Composable
+fun DashboardScreen(
+    state: DashboardUiState,          // Estado recibido
+    onAddTaskClick: () -> Unit,       // Evento elevado
+    onTaskCompleted: (String) -> Unit, // Evento elevado
+    // ...
+) {
+    // Renderiza la UI basada en 'state'
+}
+```
 
 ### Evitar recomposiciones innecesarias
 
-- Usar `remember` y `derivedStateOf` para cálculos costosos dentro de composables.
-- Usar claves estables (`key`) en listas `LazyColumn`.
-- Usar `@Stable` y `@Immutable` para ayudar al compilador de Compose a omitir recomposiciones de componentes cuyos datos no han cambiado.
+El uso de claves (`key`) en listas dinámicas ayuda a Compose a identificar qué elementos han cambiado exactamente, evitando redibujar toda la lista.
+
+**Archivo aplicado:** `presentation/ui/screens/DashboardScreen.kt`
+
+```kotlin
+// key = { it.id } asegura que Compose rastree los items por ID, no por posición.
+items(state.allTasks, key = { it.id }) { task ->
+    TaskCard(
+        task = task,
+        modifier = Modifier.fillMaxWidth().animateContentSize() // Animación eficiente
+    )
+}
+```
 
 ### Diseño eficiente de pantallas
 
-- Evitar anidamientos profundos de Layouts.
-- Modularizar pantallas grandes en componentes pequeños y testeables (`TaskCard`, `SubjectSelector`).
+Dividir pantallas complejas en pequeños componentes reutilizables (`TaskCard`, `EmptyState`, etc.).
+
+**Archivo aplicado:** `presentation/ui/screens/DashboardScreen.kt`
+
+```kotlin
+// Composición modular
+item {
+    UrgentTasksSection(...)
+}
+item {
+    RewardsBar(...)
+}
+```
 
 ---
 
@@ -63,122 +152,11 @@ Existe una correlación directa:
 
 ### Uso adecuado de Room
 
-- **Persistencia Local:** Usar Room para guardar datos críticos. Esto permite que la app sea "Offline-First" (funcione sin internet).
-- **Consultas Asíncronas:** Nunca acceder a la BD en el hilo principal (Main Thread). Usar `suspend functions` y `Flow`.
-- **Relaciones:** Usar `@Relation` o `@ForeignKey` para mantener integridad referencial (ej: Tareas borradas si se borra la Asignatura).
+Room proporciona una capa de abstracción sobre SQLite. El uso de `@ForeignKey` mantiene la integridad referencial (no hay tareas huérfanas si se borra la materia).
 
-### Manejo eficiente de llamadas a APIs
-
-- Usar **Retrofit** con **Coroutines**.
-- Patrón **Repository**: El repositorio decide si buscar datos en local (Room) o remoto (API), abstrayendo esa lógica de la UI.
-
-### Carga responsable de datos
-
-- Implementar **paginación** (Paging 3) para grandes volúmenes de datos.
-- Gestionar estados de Carga (`Loading`), Éxito (`Success`) y Error (`Error`) explícitamente en la UI.
-
----
-
-## 5. Aplicación al proyecto UniTask
-
-En esta actualización del proyecto, se han aplicado prácticas de optimización y arquitectura para asegurar la robustez, el rendimiento y la mantenibilidad de la aplicación. A continuación se documenta en detalle la estructura del proyecto y los cambios implementados, incluyendo el código fuente relevante.
-
-### Estructura del Proyecto
-
-El proyecto sigue una arquitectura limpia (Clean Architecture) con separación de capas: `domain`, `data`, y `presentation`.
-
-```text
-c:\Users\lesqu\AndroidStudioProjects\UniTask\app\src\main\java\com\example\unitask
-│   MainActivity.kt
-│
-├───data  (Capa de Datos: Repositorios y Fuentes de Datos)
-│   ├───repository
-│   │       RoomTaskRepository.kt       <-- NUEVO: Implementación con Room
-│   │       RoomSubjectRepository.kt    <-- NUEVO: Implementación con Room
-│   │       SharedPrefsNotificationRepository.kt
-│   │       ...
-│   └───room                            <-- NUEVO: Paquete para Room Database
-│           UniTaskDatabase.kt          <-- Base de Datos Principal
-│           TaskDao.kt                  <-- Data Access Object para Tareas
-│           TaskEntity.kt               <-- Tabla Tareas (SQL)
-│           SubjectDao.kt               <-- Data Access Object para Asignaturas
-│           SubjectEntity.kt            <-- Tabla Asignaturas (SQL)
-│           Converters.kt               <-- Convertidores de Tipos (Fechas)
-│
-├───di    (Inyección de Dependencias)
-│       AppModule.kt                    <-- ACTUALIZADO: Provee la BD y Repositorios
-│
-├───domain (Capa de Dominio: Reglas de Negocio)
-│   ├───model
-│   │       Task.kt
-│   │       Subject.kt
-│   └───usecase                         <-- Casos de Uso (Lógica Pura)
-│           AddTaskUseCase.kt
-│           ...
-│
-└───presentation (Capa de Presentación: UI y ViewModels)
-    ├───ui
-    │   ├───screens
-    │   │       DashboardScreen.kt      <-- OPTIMIZADO: Ciclo de Vida
-    │   │       AddTaskScreen.kt        <-- MEJORADO: Manejo de Errores
-    │   │       ...
-    └───viewmodel
-            AddTaskViewModel.kt         <-- REFACTORIZADO: Validaciones
-            ...
-```
-
----
-
-### Detalle de Implementación y Archivos Modificados
-
-A continuación se detalla cada componente implementado para cumplir con los objetivos de optimización.
-
-#### 1. Persistencia de Datos (Room) - _Optimización de Datos_
-
-**Objetivo:** Reemplazar el almacenamiento en memoria volátil por una base de datos SQLite persistente, garantizando que los datos sobrevivan al cierre de la aplicación.
-
-**Archivos Implementados:**
-
-**`data/room/UniTaskDatabase.kt`**
-Define la conexión a la base de datos y expone los DAOs.
+**Archivo aplicado:** `data/room/TaskEntity.kt`
 
 ```kotlin
-package com.example.unitask.data.room
-
-import androidx.room.Database
-import androidx.room.RoomDatabase
-import androidx.room.TypeConverters
-
-/**
- * The main database holder for the application.
- * Manages the connection to the SQLite database and provides DAOs.
- */
-@Database(
-    entities = [TaskEntity::class, SubjectEntity::class],
-    version = 1,
-    exportSchema = false
-)
-// Registers custom type converters (e.g. for LocalDateTime <-> String).
-@TypeConverters(Converters::class)
-abstract class UniTaskDatabase : RoomDatabase() {
-    abstract val taskDao: TaskDao
-    abstract val subjectDao: SubjectDao
-}
-```
-
-**`data/room/TaskEntity.kt`**
-Modela la tabla `tasks` en SQL. Se utiliza una **Foreign Key** con `CASCADE` para mantener la integridad referencial: si se borra una asignatura, se borran sus tareas.
-
-```kotlin
-package com.example.unitask.data.room
-
-import androidx.room.Entity
-import androidx.room.ForeignKey
-import androidx.room.Index
-import androidx.room.PrimaryKey
-import com.example.unitask.domain.model.Task
-import java.time.LocalDateTime
-
 @Entity(
     tableName = "tasks",
     foreignKeys = [
@@ -186,10 +164,126 @@ import java.time.LocalDateTime
             entity = SubjectEntity::class,
             parentColumns = ["id"],
             childColumns = ["subjectId"],
-            onDelete = ForeignKey.CASCADE
+            onDelete = ForeignKey.CASCADE // Borrado en cascada eficiente a nivel de BD
         )
     ],
-    // Indexing foreign keys is a best practice for query performance.
+    indices = [Index(value = ["subjectId"])] // Índice para agilizar consultas
+)
+data class TaskEntity(...)
+```
+
+### Manejo eficiente de llamadas a APIs y Datos Asíncronos
+
+Aunque actualmente la app es "Offline-First" (prioridad local), se utiliza el patrón `Repository` y `Flow` para manejar datos asíncronos de manera reactiva, estructura lista para integrar API (Retrofit).
+
+**Archivo aplicado:** `presentation/viewmodel/DashboardViewModel.kt`
+
+```kotlin
+// Uso de combine para mezclar flujos de datos asíncronos de forma eficiente
+combine(
+    getUrgentTasksUseCase(),
+    getAllTasksUseCase(),
+    getSubjectsUseCase(),
+    getAllNotificationsUseCase()
+) { urgent, all, subjects, notifications ->
+    // Transformación de datos en hilo secundario (IO safe)
+    // ...
+}
+```
+
+### Carga responsable de datos
+
+Utilizar estados de carga (`isLoading`) y manejo de errores (`errorMessage`) explícitos para informar al usuario y no bloquear la UI.
+
+**Archivo aplicado:** `presentation/viewmodel/DashboardViewModel.kt`
+
+```kotlin
+data class DashboardUiState(
+    val urgentTasks: List<TaskUiModel> = emptyList(),
+    val allTasks: List<TaskUiModel> = emptyList(),
+    val isLoading: Boolean = true, // Estado inicial de carga
+    val errorMessage: String? = null // Manejo de errores
+)
+```
+
+---
+
+## 5. Aplicación al proyecto UniTask
+
+En esta actualización del proyecto, se han aplicado prácticas de optimización y arquitectura para asegurar la robustez, el rendimiento y la mantenibilidad de la aplicación. A continuación se documenta en detalle la estructura del proyecto y los cambios implementados, incluyendo el código fuente relevante.
+
+### Estructura de Carpetas y Arquitectura
+
+El proyecto está organizado siguiendo los principios de **Clean Architecture**, dividiendo el código en capas claras de responsabilidad. Esto facilita el testeo y la escalabilidad.
+
+```text
+com.example.unitask
+├── data                          # Capa de Datos: Fuentes de datos y Repositorios
+│   ├── repository                # Implementación de interfaces de repositorio
+│   │   ├── RoomTaskRepository.kt
+│   │   ├── RoomSubjectRepository.kt
+│   │   └── ...
+│   └── room                      # Base de datos local (Room)
+│       ├── UniTaskDatabase.kt    # Definición de la BD
+│       ├── TaskDao.kt            # Consultas SQL para tareas
+│       ├── TaskEntity.kt         # Modelo de tabla 'tasks'
+│       └── ...
+├── di                            # Inyección de Dependencias
+│   └── AppModule.kt              # Contenedor manual de dependencias
+├── domain                        # Capa de Dominio: Lógica de negocio pura
+│   ├── model                     # Modelos de datos del negocio (independientes de framework)
+│   │   ├── Task.kt
+│   │   └── Subject.kt
+│   ├── repository                # Interfaces de repositorios (contratos)
+│   │   ├── TaskRepository.kt
+│   │   └── ...
+│   └── usecase                   # Casos de uso (acciones del usuario)
+│       ├── AddTaskUseCase.kt
+│       ├── GetAllTasksUseCase.kt
+│       └── ...
+├── notifications                 # Gestión de Notificaciones y Alarmas
+│   ├── AlarmScheduler.kt         # Programador de alarmas
+│   ├── NotificationHelper.kt     # Creador de canales de notificación
+│   └── ...
+├── presentation                  # Capa de Presentación: UI y Estados
+│   ├── navigation                # Grafo de navegación de Compose
+│   ├── ui
+│   │   ├── components            # Componentes reutilizables (Cards, Dialogs)
+│   │   ├── screens               # Pantallas completas (Dashboard, AddTask)
+│   │   └── theme                 # Definición de temas y colores
+│   └── viewmodel                 # ViewModels (State Holders)
+│       ├── DashboardViewModel.kt
+│       ├── AddTaskViewModel.kt
+│       └── ...
+├── sensors                       # Gestión de Hardware (Sensores)
+│   └── FocusSensorManager.kt     # Lógica de sensores de luz/proximidad
+└── ui/theme                      # Configuración visual global (Theme.kt)
+```
+
+---
+
+### Detalles de Implementación y Código Fuente
+
+A continuación se presentan implementaciones concretas de buenas prácticas en diferentes áreas del sistema.
+
+#### 1. Persistencia de Datos (Room) - _Integridad Referencial_
+
+**Buenas Prácticas:** Uso de `ForeignKey` para asegurar consistencia (Cascade Delete) e índices para velocidad.
+
+**Archivo:** `data/room/TaskEntity.kt`
+
+```kotlin
+@Entity(
+    tableName = "tasks",
+    foreignKeys = [
+        ForeignKey(
+            entity = SubjectEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["subjectId"],
+            onDelete = ForeignKey.CASCADE // SI se borra la materia, se borran sus tareas.
+        )
+    ],
+    // Indexar claves foráneas acelera las consultas de filtrado.
     indices = [Index(value = ["subjectId"])]
 )
 data class TaskEntity(
@@ -201,155 +295,132 @@ data class TaskEntity(
     val createdAt: LocalDateTime,
     val isCompleted: Boolean
 )
-
-// Mapping extensions
-fun TaskEntity.toDomain(): Task {
-    return Task(
-        id = id,
-        title = title,
-        subjectId = subjectId,
-        dueDateTime = dueDateTime,
-        createdAt = createdAt,
-        isCompleted = isCompleted
-    )
-}
-
-fun Task.toEntity(): TaskEntity {
-    return TaskEntity(
-        id = id,
-        title = title,
-        subjectId = subjectId,
-        dueDateTime = dueDateTime,
-        createdAt = createdAt,
-        isCompleted = isCompleted
-    )
-}
 ```
 
-**`data/repository/RoomTaskRepository.kt`**
-Implementa el patrón repositorio conectando la base de datos (Data Layer) con el dominio. Utiliza `Flow` para actualizaciones reactivas.
+#### 2. Gestión de Sensores y Hardware - _Separación de Lógica_
+
+**Buenas Prácticas:** Encapsular la lógica de sensores en una clase dedicada (`Manager`) en lugar de saturar la `Activity` o el `ViewModel`. Uso de `Flow` para emitir cambios de estado del sensor.
+
+**Archivo:** `sensors/FocusSensorManager.kt`
 
 ```kotlin
-package com.example.unitask.data.repository
+class FocusSensorManager(
+    private val context: Context,
+    private val notificationHelper: NotificationHelper
+) {
+    // Sensores del sistema
+    private val sensorManager: SensorManager = ...
+    private val lightSensor: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
 
-import com.example.unitask.data.room.TaskDao
-import com.example.unitask.data.room.toDomain
-import com.example.unitask.data.room.toEntity
-import com.example.unitask.domain.model.Task
-import com.example.unitask.domain.repository.TaskRepository
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+    // Estado expuesto como Flow inmutable
+    private val _state = MutableStateFlow(FocusSensorState())
+    val state: StateFlow<FocusSensorState> = _state
 
-/**
- * [TaskRepository] implementation using Room as the persistent data source.
- */
-class RoomTaskRepository(private val taskDao: TaskDao) : TaskRepository {
-
-    override fun getTasksFlow(): Flow<List<Task>> {
-        return taskDao.getAllTasks().map { entities ->
-            entities.map { it.toDomain() }
-        }
-    }
-
-    override suspend fun addTask(task: Task) {
-        taskDao.insertTask(task.toEntity())
-    }
-
-    // ... completeTask, deleteTask implementation ...
-}
-```
-
-#### 2. Inyección de Dependencias - _Configuración Global_
-
-**Objetivo:** Proveer la instancia única de la base de datos a toda la aplicación.
-
-**Archivo Modificado: `di/AppModule.kt`**
-Se modificó para inicializar la base de datos Room en lugar de los repositorios en memoria.
-
-```kotlin
-object AppModule {
-
-    private var _database: UniTaskDatabase? = null
-
-    // Helper to access DB safely
-    private val database: UniTaskDatabase
-        get() = _database ?: throw IllegalStateException("AppModule not configured")
-
-    // Data sources: Ahora usan Room
-    private val subjectRepository: SubjectRepository by lazy {
-        RoomSubjectRepository(database.subjectDao)
-    }
-
-    private val taskRepository: TaskRepository by lazy {
-        RoomTaskRepository(database.taskDao)
-    }
-
-    fun configureAppModule(context: Context) {
-        _appContext = context.applicationContext
-
-        // Initialize Room Database
-        if (_database == null) {
-            _database = Room.databaseBuilder(
-                context.applicationContext,
-                UniTaskDatabase::class.java,
-                "unitask_database"
-            ).build()
+    private val lightListener = object : SensorEventListener {
+        override fun onSensorChanged(event: SensorEvent) {
+            val lux = event.values.getOrNull(0) ?: return
+            // Lógica de negocio del sensor: determinar si está oscuro
+            val dark = lux < lightThreshold
+            // Actualización reactiva del estado
+            _state.update { it.copy(isDark = dark) }
         }
         // ...
     }
+
+    // Métodos para controlar el ciclo de vida de los sensores (ahorro de batería)
+    fun start() { /* Registrar listeners */ }
+    fun stop() { /* Desregistrar listeners */ }
 }
 ```
 
-#### 3. Optimización de UI y Ciclo de Vida - _Eficiencia de Recursos_
+#### 3. Validación de Entrada y Manejo de Errores - _UI Defensiva_
 
-**Objetivo:** Evitar que la UI procese datos cuando la aplicación está en segundo plano (suspendida), ahorrando batería.
+**Buenas Prácticas:** Validar datos en el `ViewModel` antes de invocar la capa de dominio. Uso de "Sealed Interfaces" para tipar errores específicos.
 
-**Archivo Modificado: `presentation/ui/screens/DashboardScreen.kt`**
-Se reemplazó `collectAsState` por `collectAsStateWithLifecycle`.
-
-```kotlin
-@Composable
-fun DashboardRoute(
-    viewModel: DashboardViewModel = viewModel(factory = AppModule.viewModelFactory),
-    // ...
-) {
-    // OPTIMIZACIÓN: collectAsStateWithLifecycle detiene la recolección flow
-    // cuando la app va a segundo plano (Lifecycle STOPPED).
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
-
-    // ...
-}
-```
-
-#### 4. Calidad de Código - _Manejo de Errores Tipados_
-
-**Objetivo:** Eliminar "hardcoded strings" y mejorar la robustez del manejo de errores.
-
-**Archivo Modificado: `presentation/viewmodel/AddTaskViewModel.kt`**
-Se introdujo una interfaz sellada (`sealed interface`) para los errores.
+**Archivo:** `presentation/viewmodel/AddTaskViewModel.kt`
 
 ```kotlin
-sealed interface AddTaskError {
-    data object TitleRequired : AddTaskError
-    data object TitleTooLong : AddTaskError
-    data object SubjectRequired : AddTaskError
-    data object DateTimeRequired : AddTaskError
-    data class SubmitError(val message: String) : AddTaskError
-}
+fun submit() {
+    val current = _uiState.value
+    val rawTitle = current.title.trim()
 
-// En el ViewModel:
-fun onTitleChanged(value: String) {
-    if (value.length > MAX_TITLE_LENGTH) {
-        // Uso de tipo seguro en lugar de String directo
+    // 1. Validaciones previas
+    if (rawTitle.isBlank()) {
+        _uiState.updateDetails { copy(error = AddTaskError.TitleRequired) }
+        return
+    }
+
+    if (rawTitle.length > MAX_TITLE_LENGTH) {
         _uiState.updateDetails { copy(error = AddTaskError.TitleTooLong) }
         return
     }
-    // ...
+
+    // 2. Ejecución asíncrona segura con runCatching
+    viewModelScope.launch {
+        _uiState.updateDetails { copy(isSubmitting = true, error = null) }
+        runCatching {
+            addTaskUseCase(...)
+        }
+        .onSuccess {
+            _events.emit(AddTaskEvent.Success(task.id, isUpdate))
+        }
+        .onFailure { error ->
+            // Manejo centralizado de excepciones
+            val submitError = AddTaskError.SubmitError(error.message ?: "Error al guardar")
+            _uiState.updateDetails { copy(isSubmitting = false, error = submitError) }
+        }
+    }
+}
+```
+
+#### 4. Configuración del Entry Point y Permisos - _Android Moderno_
+
+**Buenas Prácticas:** Manejo de permisos en tiempo de ejecución (Android 13+ Notificaciones) y configuración de dependencias globales.
+
+**Archivo:** `MainActivity.kt`
+
+```kotlin
+override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+
+    // Configuración Inicial Global
+    AppModule.configureAppModule(applicationContext)
+
+    // Gestión de Permisos Android 13 (Tiramisu)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        val perm = Manifest.permission.POST_NOTIFICATIONS
+        if (ContextCompat.checkSelfPermission(this, perm) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(perm), 1001)
+        }
+    }
+
+    // Renderizado Edge-to-Edge para aprovechar toda la pantalla
+    enableEdgeToEdge()
+
+    setContent {
+        // Inyección de Tema Dinámico
+        UniTaskTheme {
+            UniTaskApp(...)
+        }
+    }
 }
 ```
 
 ---
 
+### Aspectos a Mejorar (Identificados)
+
+1.  **Inyección de Dependencias Automática (Hilt):**
+    Actualmente, `AppModule.kt` es un `object` singleton manual.
+    - _Mejora:_ Migrar a **Dagger Hilt** para estandarizar la inyección y facilitar el testing unitario avanzado.
+    - _Justificación:_ Elimina el código boilerplate (repetitivo) y gestiona los scopes (Singleton, ViewModelScope) automáticamente.
+
+2.  **Sincronización Remota (Cloud Sync):**
+    La app funciona 100% local (Room).
+    - _Mejora:_ Implementar `Retrofit` para consumir una API REST y `WorkManager` para sincronizar datos en segundo plano cuando haya conexión.
+
+---
+
 ## 6. Conclusión
 
-La aplicación de estas buenas prácticas transforma UniTask de un prototipo funcional a una aplicación robusta y profesional. La introducción de persistencia (Room) garantiza que el usuario no pierda trabajo, mientras que las optimizaciones de UI (Lifecycle) y código (Strings) aseguran que la app sea mantenible y eficiente energéticamente. Publicar una app sin estos estándares resultaría en malas reseñas por pérdida de datos o consumo excesivo de batería.
+La aplicación estricta de estas buenas prácticas no es opcional en el desarrollo profesional. Aplicar **Clean Architecture** y optimizaciones de **Ciclo de Vida** antes de publicar asegura que `UniTask` sea robusta, escalable y respetuosa con los recursos del dispositivo del usuario. Un código bien organizado hoy previene deuda técnica mañana y garantiza una base sólida para futuras funcionalidades.
