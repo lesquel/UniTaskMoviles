@@ -8,6 +8,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.room.Room
 import com.example.unitask.data.repository.RoomSubjectRepository
 import com.example.unitask.data.repository.RoomTaskRepository
+import com.example.unitask.data.repository.RoomUserRepository
 import com.example.unitask.data.repository.SampleData
 import com.example.unitask.data.repository.SharedPrefsNotificationRepository
 import com.example.unitask.data.repository.SharedPrefsRewardRepository
@@ -16,6 +17,7 @@ import com.example.unitask.domain.repository.NotificationRepository
 import com.example.unitask.domain.repository.RewardRepository
 import com.example.unitask.domain.repository.SubjectRepository
 import com.example.unitask.domain.repository.TaskRepository
+import com.example.unitask.domain.repository.UserRepository
 import com.example.unitask.domain.usecase.AddSubjectUseCase
 import com.example.unitask.domain.usecase.AddTaskUseCase
 import com.example.unitask.domain.usecase.AwardXpUseCase
@@ -37,7 +39,10 @@ import com.example.unitask.notifications.AlarmScheduler
 import com.example.unitask.notifications.RealAlarmManagerWrapper
 import com.example.unitask.presentation.viewmodel.AddTaskViewModel
 import com.example.unitask.presentation.viewmodel.AlarmViewModel
+import com.example.unitask.presentation.viewmodel.AuthViewModel
 import com.example.unitask.presentation.viewmodel.DashboardViewModel
+import com.example.unitask.presentation.viewmodel.LeaderboardViewModel
+import com.example.unitask.presentation.viewmodel.ProfileViewModel
 import com.example.unitask.presentation.viewmodel.RewardsViewModel
 import com.example.unitask.presentation.viewmodel.SubjectsViewModel
 import java.time.LocalDateTime
@@ -106,6 +111,7 @@ object AppModule {
     private var _alarmScheduler: AlarmScheduler? = null
     private var _notificationRepository: NotificationRepository? = null
     private var _rewardRepository: RewardRepository? = null
+    private var _userRepository: UserRepository? = null
     private var _appContext: Context? = null
 
     val viewModelFactory: ViewModelProvider.Factory = viewModelFactory {
@@ -165,16 +171,45 @@ object AppModule {
         }
     }
 
+    fun authViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {
+        initializer {
+            AuthViewModel(
+                userRepository = provideUserRepository()
+            )
+        }
+    }
+
+    fun profileViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {
+        initializer {
+            val rewardRepo = provideRewardRepository()
+            ProfileViewModel(
+                userRepository = provideUserRepository(),
+                getXpUseCase = GetXpUseCase(rewardRepo),
+                getLevelUseCase = GetLevelUseCase(rewardRepo)
+            )
+        }
+    }
+
+    fun leaderboardViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {
+        initializer {
+            LeaderboardViewModel(
+                userRepository = provideUserRepository()
+            )
+        }
+    }
+
     fun configureAppModule(context: Context) {
         _appContext = context.applicationContext
 
-        // Initialize Room Database
+        // Initialize Room Database with migration
         if (_database == null) {
             _database = Room.databaseBuilder(
                 context.applicationContext,
                 UniTaskDatabase::class.java,
                 "unitask_database"
-            ).build()
+            )
+            .addMigrations(UniTaskDatabase.MIGRATION_1_2, UniTaskDatabase.MIGRATION_2_3)
+            .build()
         }
 
         // Lazily create shared services so they survive the app lifecycle.
@@ -196,6 +231,9 @@ object AppModule {
                 ?: throw IllegalStateException("AppModule context not set")
             _rewardRepository = SharedPrefsRewardRepository(ctx)
         }
+        if (_userRepository == null) {
+            _userRepository = RoomUserRepository(database.userDao, database.subjectDao)
+        }
     }
 
     fun provideNotificationRepository(): NotificationRepository {
@@ -205,6 +243,11 @@ object AppModule {
 
     fun provideRewardRepository(): RewardRepository {
         return _rewardRepository
+            ?: throw IllegalStateException("AppModule not configured: call configureAppModule(context)")
+    }
+
+    fun provideUserRepository(): UserRepository {
+        return _userRepository
             ?: throw IllegalStateException("AppModule not configured: call configureAppModule(context)")
     }
 }

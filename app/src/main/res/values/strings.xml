@@ -96,4 +96,49 @@
     <string name="error_subject_required">Debes seleccionar una asignatura.</string>
     <string name="error_datetime_required">Fecha y hora son requeridas.</string>
     <string name="error_save_generic">Error al guardar</string>
+
+    <!-- Navegación inferior -->
+    <string name="nav_home">Inicio</string>
+    <string name="nav_subjects">Materias</string>
+    <string name="nav_new_task">Nueva</string>
+    <string name="nav_profile">Perfil</string>
+    <string name="nav_leaderboard">Top</string>
+
+    <!-- Perfil -->
+    <string name="profile_title">Mi Perfil</string>
+    <string name="profile_edit">Editar perfil</string>
+    <string name="profile_username">Nombre de usuario</string>
+    <string name="profile_email">Correo electrónico</string>
+    <string name="profile_change_photo">Cambiar foto</string>
+    <string name="profile_stats">Estadísticas</string>
+    <string name="profile_tasks_completed">Tareas completadas</string>
+    <string name="profile_current_streak">Racha actual</string>
+    <string name="profile_save">Guardar cambios</string>
+    <string name="profile_logout">Cerrar sesión</string>
+
+    <!-- Login y Registro -->
+    <string name="login_title">Iniciar sesión</string>
+    <string name="login_button">Entrar</string>
+    <string name="login_no_account">¿No tienes cuenta?</string>
+    <string name="login_register">Regístrate</string>
+    <string name="login_error">Usuario o contraseña incorrectos</string>
+    <string name="register_title">Crear cuenta</string>
+    <string name="register_button">Registrarse</string>
+    <string name="register_have_account">¿Ya tienes cuenta?</string>
+    <string name="register_login">Inicia sesión</string>
+    <string name="register_error_username">El nombre de usuario ya existe</string>
+    <string name="register_error_email">El correo ya está registrado</string>
+    <string name="password_label">Contraseña</string>
+    <string name="password_confirm_label">Confirmar contraseña</string>
+    <string name="password_error_mismatch">Las contraseñas no coinciden</string>
+    <string name="password_error_short">La contraseña debe tener al menos 6 caracteres</string>
+
+    <!-- Leaderboard -->
+    <string name="leaderboard_title">Ranking</string>
+    <string name="leaderboard_top">Top Usuarios</string>
+    <string name="leaderboard_filter_all">Todos</string>
+    <string name="leaderboard_your_position">Tu posición</string>
+    <string name="leaderboard_no_users">No hay usuarios aún</string>
+    <string name="leaderboard_xp_total">%1$d XP</string>
+    <string name="leaderboard_tasks_count">%1$d tareas</string>
 </resources>

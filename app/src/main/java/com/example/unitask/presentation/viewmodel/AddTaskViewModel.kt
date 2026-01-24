@@ -2,6 +2,7 @@ package com.example.unitask.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.unitask.domain.model.AlarmTemplate
 import com.example.unitask.domain.model.Subject
 import com.example.unitask.domain.model.Task
 import com.example.unitask.domain.usecase.AddTaskUseCase
@@ -29,6 +30,9 @@ class AddTaskViewModel(
     private val nowProvider: () -> LocalDateTime,
     initialTaskId: String? = null
 ) : ViewModel() {
+    
+    // Plantillas de alarma disponibles (por defecto usa las predefinidas)
+    val alarmTemplates: List<AlarmTemplate> = AlarmTemplate.defaults
 
     private val _uiState = MutableStateFlow(AddTaskUiState())
     val uiState: StateFlow<AddTaskUiState> = _uiState.asStateFlow()
@@ -76,6 +80,22 @@ class AddTaskViewModel(
 
     fun onTimeSelected(time: LocalTime) {
         _uiState.updateDetails { copy(dueTime = time, error = null) }
+    }
+
+    fun onAlarmTemplateToggled(template: AlarmTemplate) {
+        _uiState.updateDetails {
+            val currentSelected = selectedAlarmTemplates.toMutableSet()
+            if (currentSelected.contains(template.id)) {
+                currentSelected.remove(template.id)
+            } else {
+                currentSelected.add(template.id)
+            }
+            copy(selectedAlarmTemplates = currentSelected)
+        }
+    }
+
+    fun clearSelectedAlarms() {
+        _uiState.updateDetails { copy(selectedAlarmTemplates = emptySet()) }
     }
 
     fun submit() {
@@ -197,6 +217,7 @@ data class AddTaskUiState(
     val dueDate: LocalDate? = null,
     val dueTime: LocalTime? = null,
     val subjects: List<SubjectOption> = emptyList(),
+    val selectedAlarmTemplates: Set<String> = emptySet(), // IDs de plantillas seleccionadas
     val isSubmitting: Boolean = false,
     val error: AddTaskError? = null,
     val editingTaskId: String? = null

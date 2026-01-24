@@ -3,8 +3,11 @@ package com.example.unitask.presentation.ui.screens
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -22,6 +26,8 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -51,6 +57,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.unitask.di.AppModule
+import com.example.unitask.domain.model.AlarmTemplate
 import com.example.unitask.presentation.viewmodel.AddTaskEvent
 import com.example.unitask.presentation.viewmodel.AddTaskUiState
 import com.example.unitask.presentation.viewmodel.AddTaskError
@@ -104,11 +111,13 @@ fun AddTaskRoute(
     AddTaskScreen(
         state = state,
         snackbarHostState = snackbarHostState,
+        alarmTemplates = viewModel.alarmTemplates,
         onBack = onBack,
         onTitleChanged = viewModel::onTitleChanged,
         onSubjectSelected = viewModel::onSubjectSelected,
         onDateSelected = viewModel::onDateSelected,
         onTimeSelected = viewModel::onTimeSelected,
+        onAlarmTemplateToggled = viewModel::onAlarmTemplateToggled,
         onSubmit = viewModel::submit,
         onAlarmSettingsClick = onAlarmSettingsClick
     )
@@ -117,16 +126,18 @@ fun AddTaskRoute(
 /**
  * Formulario para capturar título, materia y fecha/hora de entrega con validación básica.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AddTaskScreen(
     state: AddTaskUiState,
     snackbarHostState: SnackbarHostState,
+    alarmTemplates: List<AlarmTemplate> = emptyList(),
     onBack: () -> Unit,
     onTitleChanged: (String) -> Unit,
     onSubjectSelected: (String) -> Unit,
     onDateSelected: (LocalDate) -> Unit,
     onTimeSelected: (LocalTime) -> Unit,
+    onAlarmTemplateToggled: (AlarmTemplate) -> Unit = {},
     onSubmit: () -> Unit,
     onAlarmSettingsClick: () -> Unit
 ) {
@@ -189,7 +200,7 @@ fun AddTaskScreen(
                 dueTimeText = dueTimeText,
                 onPickDate = {
                     val current = state.dueDate ?: LocalDate.now()
-                    DatePickerDialog(
+                    val dialog = DatePickerDialog(
                         context,
                         { _, year, month, dayOfMonth ->
                             onDateSelected(LocalDate.of(year, month + 1, dayOfMonth))
@@ -197,7 +208,10 @@ fun AddTaskScreen(
                         current.year,
                         current.monthValue - 1,
                         current.dayOfMonth
-                    ).show()
+                    )
+                    // Bloquear fechas anteriores a hoy
+                    dialog.datePicker.minDate = System.currentTimeMillis() - 1000
+                    dialog.show()
                 },
                 onPickTime = {
                     val current = state.dueTime ?: LocalTime.now().withSecond(0).withNano(0)
@@ -212,6 +226,16 @@ fun AddTaskScreen(
                     ).show()
                 }
             )
+            
+            // Selector de plantillas de alarma
+            if (alarmTemplates.isNotEmpty()) {
+                AlarmTemplateSelector(
+                    templates = alarmTemplates,
+                    selectedTemplateIds = state.selectedAlarmTemplates,
+                    onTemplateToggled = onAlarmTemplateToggled
+                )
+            }
+            
             state.error?.let { error ->
                 val errorText = when (error) {
                     AddTaskError.TitleRequired -> stringResource(id = com.example.unitask.R.string.error_title_required)
@@ -359,5 +383,52 @@ private fun SubjectColorDot(colorHex: String) {
         .getOrElse { MaterialTheme.colorScheme.primary }
     Canvas(modifier = Modifier.size(12.dp)) {
         drawCircle(color = color)
+    }
+}
+
+/**
+ * Selector de plantillas de alarma con chips.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun AlarmTemplateSelector(
+    templates: List<AlarmTemplate>,
+    selectedTemplateIds: Set<String>,
+    onTemplateToggled: (AlarmTemplate) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = stringResource(id = com.example.unitask.R.string.configure_alarms),
+            style = MaterialTheme.typography.labelLarge
+        )
+        Text(
+            text = "Selecciona cuándo quieres recibir recordatorios",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            templates.forEach { template ->
+                val isSelected = selectedTemplateIds.contains(template.id)
+                FilterChip(
+                    selected = isSelected,
+                    onClick = { onTemplateToggled(template) },
+                    label = { Text(template.name) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                )
+            }
+        }
+        if (selectedTemplateIds.isNotEmpty()) {
+            Text(
+                text = "${selectedTemplateIds.size} recordatorio(s) seleccionado(s)",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
     }
 }

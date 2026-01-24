@@ -3,6 +3,7 @@ package com.example.unitask.presentation.navigation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -15,12 +16,19 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.unitask.presentation.ui.components.BottomNavBar
+import com.example.unitask.presentation.ui.components.BottomNavDestination
 import com.example.unitask.presentation.ui.components.FocusSensorBanner
 import com.example.unitask.presentation.ui.screens.AddTaskRoute
 import com.example.unitask.presentation.ui.screens.AlarmSettingsScreen
 import com.example.unitask.presentation.ui.screens.DashboardRoute
+import com.example.unitask.presentation.ui.screens.LeaderboardScreen
+import com.example.unitask.presentation.ui.screens.LoginRoute
+import com.example.unitask.presentation.ui.screens.ProfileRoute
+import com.example.unitask.presentation.ui.screens.RegisterRoute
 import com.example.unitask.presentation.ui.screens.SubjectsRoute
 import com.example.unitask.sensors.FocusSensorManager
 import com.example.unitask.settings.FocusSensorSettingsRepository
@@ -41,7 +49,19 @@ private sealed class UniTaskDestination(val route: String) {
         fun createRoute(taskId: String? = null): String =
             if (taskId.isNullOrBlank()) route else "$route?$ARG_TASK_ID=${Uri.encode(taskId)}"
     }
+    object Profile : UniTaskDestination("profile")
+    object Leaderboard : UniTaskDestination("leaderboard")
+    object Login : UniTaskDestination("login")
+    object Register : UniTaskDestination("register")
 }
+
+// Rutas que muestran la barra de navegación inferior
+private val bottomNavRoutes = setOf(
+    UniTaskDestination.Dashboard.route,
+    UniTaskDestination.Subjects.route,
+    UniTaskDestination.Profile.route,
+    UniTaskDestination.Leaderboard.route
+)
 
 /**
  * Root composable that hosts navigation plus the focus alert banner.
@@ -60,21 +80,50 @@ fun UniTaskApp(
         focusSensorManager.setAlertsEnabled(focusAlertsEnabled)
     }
     val navController = rememberNavController()
-    Box(modifier = modifier.fillMaxSize()) {
-        UniTaskNavHost(
-            navController = navController,
-            modifier = Modifier.fillMaxSize(),
-            isDarkTheme = isDarkTheme,
-            onToggleTheme = onToggleTheme,
-            focusSensorSettingsRepository = focusSensorSettingsRepository
-        )
-        if (focusAlertsEnabled) {
-            FocusSensorBanner(
-                state = focusState,
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = 12.dp)
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route?.substringBefore("?")
+    
+    // Determina si mostrar la barra de navegación inferior
+    val showBottomBar = currentRoute in bottomNavRoutes
+    
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        bottomBar = {
+            if (showBottomBar) {
+                BottomNavBar(
+                    currentRoute = currentRoute,
+                    onNavigate = { destination ->
+                        if (currentRoute != destination.route) {
+                            navController.navigate(destination.route) {
+                                // Pop hasta el inicio para evitar acumulación de pantallas
+                                popUpTo(UniTaskDestination.Dashboard.route) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    }
+                )
+            }
+        }
+    ) { innerPadding ->
+        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            UniTaskNavHost(
+                navController = navController,
+                modifier = Modifier.fillMaxSize(),
+                isDarkTheme = isDarkTheme,
+                onToggleTheme = onToggleTheme,
+                focusSensorSettingsRepository = focusSensorSettingsRepository
             )
+            if (focusAlertsEnabled) {
+                FocusSensorBanner(
+                    state = focusState,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 12.dp)
+                )
+            }
         }
     }
 }
@@ -144,6 +193,45 @@ private fun UniTaskNavHost(
             AlarmSettingsScreen(
                 initialTaskId = taskId,
                 onBack = { navController.popBackStack() }
+            )
+        }
+        composable(UniTaskDestination.Profile.route) {
+            ProfileRoute(
+                onBack = { navController.popBackStack() },
+                onLogout = {
+                    navController.navigate(UniTaskDestination.Login.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
+        }
+        composable(UniTaskDestination.Leaderboard.route) {
+            LeaderboardScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable(UniTaskDestination.Login.route) {
+            LoginRoute(
+                onLoginSuccess = {
+                    navController.navigate(UniTaskDestination.Dashboard.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
+                onNavigateToRegister = {
+                    navController.navigate(UniTaskDestination.Register.route)
+                }
+            )
+        }
+        composable(UniTaskDestination.Register.route) {
+            RegisterRoute(
+                onRegisterSuccess = {
+                    navController.navigate(UniTaskDestination.Dashboard.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
+                onNavigateToLogin = {
+                    navController.popBackStack()
+                }
             )
         }
     }

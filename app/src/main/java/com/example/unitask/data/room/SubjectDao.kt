@@ -18,6 +18,12 @@ interface SubjectDao {
     @Query("SELECT * FROM subjects")
     fun getAllSubjects(): Flow<List<SubjectEntity>>
 
+    /**
+     * Gets all subjects once (not as Flow).
+     */
+    @Query("SELECT * FROM subjects")
+    suspend fun getAllOnce(): List<SubjectEntity>
+
     @Query("SELECT * FROM subjects WHERE id = :id")
     suspend fun getSubjectById(id: String): SubjectEntity?
 

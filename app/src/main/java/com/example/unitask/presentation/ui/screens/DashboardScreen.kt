@@ -47,13 +47,14 @@ import androidx.compose.animation.animateContentSize
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.unitask.di.AppModule
+import com.example.unitask.presentation.ui.components.DayFilter
+import com.example.unitask.presentation.ui.components.DayFilterChips
 import com.example.unitask.presentation.ui.components.EmptyState
 import com.example.unitask.presentation.ui.components.FocusSensorSettingsDialog
 import com.example.unitask.presentation.ui.components.TaskCard
 import com.example.unitask.presentation.viewmodel.DashboardUiState
 import com.example.unitask.presentation.viewmodel.DashboardViewModel
 import com.example.unitask.presentation.viewmodel.RewardsViewModel
-// (imports cleaned)
 import com.example.unitask.presentation.viewmodel.TaskUiModel
 import com.example.unitask.settings.FocusSensorSettingsRepository
 import kotlinx.coroutines.launch
@@ -99,9 +100,11 @@ fun DashboardRoute(
                 coroutineScope.launch { focusSensorSettingsRepository.setFocusAlertsEnabled(enabled) }
             },
             onTaskCompleted = viewModel::onTaskCompleted,
+            onDayFilterSelected = viewModel::onDayFilterSelected,
+            onLoadMoreTasks = viewModel::loadNextPage,
             rewardsViewModel = rewardsViewModel,
-                isDarkTheme = isDarkTheme,
-                onToggleTheme = onToggleTheme
+            isDarkTheme = isDarkTheme,
+            onToggleTheme = onToggleTheme
         )
 }
 
@@ -118,6 +121,8 @@ fun DashboardScreen(
     onAlarmSettingsClick: (String) -> Unit,
     onTaskClick: (String) -> Unit,
     onTaskCompleted: (String) -> Unit,
+    onDayFilterSelected: (DayFilter) -> Unit,
+    onLoadMoreTasks: () -> Unit,
     rewardsViewModel: RewardsViewModel,
     focusAlertsEnabled: Boolean,
     onFocusAlertsToggle: (Boolean) -> Unit,
@@ -134,6 +139,8 @@ fun DashboardScreen(
         onAlarmSettingsClick = onAlarmSettingsClick,
         onTaskClick = onTaskClick,
         onTaskCompleted = onTaskCompleted,
+        onDayFilterSelected = onDayFilterSelected,
+        onLoadMoreTasks = onLoadMoreTasks,
         focusAlertsEnabled = focusAlertsEnabled,
         onFocusAlertsToggle = onFocusAlertsToggle,
         isDarkTheme = isDarkTheme,
@@ -157,6 +164,8 @@ fun DashboardScreenForTest(
     onAlarmSettingsClick: (String) -> Unit,
     onTaskClick: (String) -> Unit,
     onTaskCompleted: (String) -> Unit,
+    onDayFilterSelected: (DayFilter) -> Unit = {},
+    onLoadMoreTasks: () -> Unit = {},
     focusAlertsEnabled: Boolean,
     onFocusAlertsToggle: (Boolean) -> Unit,
     isDarkTheme: Boolean = false,
@@ -213,9 +222,9 @@ fun DashboardScreenForTest(
                 )
             }
             item {
-                    // Reward bar showing XP and level
-                    val progress = (xp % (maxOf(1, level * 100))).toFloat() / (level * 100).toFloat()
-                    com.example.unitask.presentation.ui.components.RewardsBar(xp = xp, level = level, progressFraction = progress)
+                // Reward bar showing XP and level
+                val progress = (xp % (maxOf(1, level * 100))).toFloat() / (level * 100).toFloat()
+                com.example.unitask.presentation.ui.components.RewardsBar(xp = xp, level = level, progressFraction = progress)
             }
             item {
                 Text(
@@ -224,12 +233,20 @@ fun DashboardScreenForTest(
                     fontWeight = FontWeight.SemiBold
                 )
             }
-            if (state.allTasks.isEmpty()) {
+            // Filtros por día de la semana
+            item {
+                DayFilterChips(
+                    selectedFilter = state.selectedDayFilter,
+                    onFilterSelected = onDayFilterSelected,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            if (state.displayedTasks.isEmpty()) {
                 item {
                     EmptyState()
                 }
             } else {
-                items(state.allTasks, key = { it.id }) { task ->
+                items(state.displayedTasks, key = { it.id }) { task ->
                     TaskCard(
                         task = task,
                         onTaskCompleted = onTaskCompleted,
@@ -239,6 +256,17 @@ fun DashboardScreenForTest(
                             .fillMaxWidth()
                             .animateContentSize()
                     )
+                }
+                // Botón para cargar más tareas
+                if (state.hasMorePages) {
+                    item {
+                        androidx.compose.material3.TextButton(
+                            onClick = onLoadMoreTasks,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Cargar más tareas")
+                        }
+                    }
                 }
             }
         }
