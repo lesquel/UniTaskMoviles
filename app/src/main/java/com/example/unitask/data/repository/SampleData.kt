@@ -29,54 +29,62 @@ object SampleData {
     )
 
     // Retorna tareas de ejemplo con fechas relativas a la referencia actual.
-    fun tasks(reference: LocalDateTime = LocalDateTime.now()): List<Task> {
+    fun tasks(reference: LocalDateTime = LocalDateTime.now(), userId: String = "sample-user"): List<Task> {
         val base = reference.withSecond(0).withNano(0)
         val subjects = subjects()
         return listOf(
             Task(
                 id = "task-arquitectura-ent1",
+                userId = userId,
                 title = "Arquitectura Limpia - Entrega 1",
                 subjectId = subjects[0].id,
                 dueDateTime = base.plusHours(18)
             ),
             Task(
                 id = "task-operativos-lab",
+                userId = userId,
                 title = "Laboratorio de Sistemas - Informe",
                 subjectId = subjects[1].id,
                 dueDateTime = base.plusHours(30)
             ),
             Task(
                 id = "task-bases-consulta",
+                userId = userId,
                 title = "Consulta SQL Avanzada",
                 subjectId = subjects[2].id,
                 dueDateTime = base.plusHours(52)
             ),
             Task(
                 id = "task-arquitectura-lectura",
+                userId = userId,
                 title = "Lectura Capítulo 4",
                 subjectId = subjects[0].id,
                 dueDateTime = base.plusDays(3).minusHours(2)
             ),
             Task(
                 id = "task-operativos-quiz",
+                userId = userId,
                 title = "Quiz de Planificación",
                 subjectId = subjects[1].id,
                 dueDateTime = base.plusDays(2)
             ),
             Task(
                 id = "task-bases-proyecto",
+                userId = userId,
                 title = "Proyecto Final - Modelo Lógico",
                 subjectId = subjects[2].id,
                 dueDateTime = base.plusDays(4)
             ),
             Task(
                 id = "task-arquitectura-refactor",
+                userId = userId,
                 title = "Refactor Sprint Actual",
                 subjectId = subjects[0].id,
                 dueDateTime = base.plusDays(5)
             ),
             Task(
                 id = "task-operativos-exposicion",
+                userId = userId,
                 title = "Exposición Kernel Linux",
                 subjectId = subjects[1].id,
                 dueDateTime = base.plusDays(6)

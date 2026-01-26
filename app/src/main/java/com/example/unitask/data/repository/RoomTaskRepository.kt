@@ -27,6 +27,15 @@ class RoomTaskRepository(private val taskDao: TaskDao) : TaskRepository {
             entities.map { it.toDomain() }
         }
     }
+    
+    /**
+     * Retrieves a stream of tasks for a specific user.
+     */
+    override fun getTasksFlowByUserId(userId: String): Flow<List<Task>> {
+        return taskDao.getTasksByUserId(userId).map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
 
     /**
      * Inserts or updates a task in the database.

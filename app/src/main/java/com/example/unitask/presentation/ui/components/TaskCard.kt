@@ -39,6 +39,7 @@ import java.util.Locale
 
 /**
  * Tarjeta que resume información clave de la tarea y ofrece acciones rápidas.
+ * Diseño mejorado con mejor espaciado y visual más atractivo.
  */
 @Composable
 fun TaskCard(
@@ -48,75 +49,119 @@ fun TaskCard(
     onAlarmSettingsClick: (String) -> Unit,
     onTaskClick: (String) -> Unit
 ) {
-    // Las tarjetas permiten completar la tarea, acceder a alarmas y editar mediante tap.
+    val subjectColor = runCatching { Color(parseColor(task.subjectColorHex)) }
+        .getOrElse { MaterialTheme.colorScheme.primary }
+    
     Card(
         modifier = modifier
-            .padding(vertical = 4.dp)
+            .padding(vertical = 6.dp)
             .fillMaxWidth()
             .clickable { onTaskClick(task.id) },
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp,
+            pressedElevation = 8.dp
+        ),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                SubjectBadge(task.subjectName, task.subjectColorHex)
-                Spacer(modifier = Modifier.weight(1f))
-                Text(text = task.dueFormatted, style = MaterialTheme.typography.labelMedium)
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = task.title,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface
+        // Barra de color lateral
+        Row {
+            Box(
+                modifier = Modifier
+                    .width(4.dp)
+                    .height(120.dp)
+                    .background(subjectColor)
             )
-            Spacer(modifier = Modifier.height(4.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .weight(1f)
             ) {
-                Column {
-                    if (task.alarmCount > 0) {
+                // Header con materia y fecha
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    SubjectBadge(task.subjectName, task.subjectColorHex)
+                    Spacer(modifier = Modifier.weight(1f))
+                    Text(
+                        text = task.dueFormatted,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                // Título de la tarea
+                Text(
+                    text = task.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Info de alarmas
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = if (task.alarmCount > 0) subjectColor else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = stringResource(id = com.example.unitask.R.string.alarm_summary_next, formatTrigger(task.nextAlarmAtMillis)),
+                            text = if (task.alarmCount > 0) {
+                                "${task.alarmCount} recordatorio(s)"
+                            } else {
+                                stringResource(id = com.example.unitask.R.string.alarm_summary_none)
+                            },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        if (task.alarmCount > 1) {
-                            Text(
-                                text = stringResource(id = com.example.unitask.R.string.alarm_summary_count, task.alarmCount),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                    
+                    // Botón de completar
+                    if (!task.isCompleted) {
+                        IconButton(
+                            onClick = { onTaskCompleted(task.id) },
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primaryContainer)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = stringResource(id = com.example.unitask.R.string.complete_task),
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                     } else {
-                        Text(
-                            text = stringResource(id = com.example.unitask.R.string.alarm_summary_none),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = stringResource(id = com.example.unitask.R.string.complete_task),
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
-                }
-                IconButton(onClick = { onAlarmSettingsClick(task.id) }) {
-                    Icon(
-                        imageVector = Icons.Default.Notifications,
-                        contentDescription = stringResource(id = com.example.unitask.R.string.alarm_settings_action)
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
-                if (!task.isCompleted) {
-                    IconButton(onClick = { onTaskCompleted(task.id) }) {
-                        Icon(imageVector = Icons.Default.Check, contentDescription = stringResource(id = com.example.unitask.R.string.complete_task))
-                    }
-                } else {
-                    Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = stringResource(id = com.example.unitask.R.string.complete_task),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
                 }
             }
         }

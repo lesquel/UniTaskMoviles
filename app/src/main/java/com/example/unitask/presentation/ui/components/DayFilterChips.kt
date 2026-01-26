@@ -24,7 +24,7 @@ sealed class DayFilter {
     fun getDisplayName(): String {
         return when (this) {
             is All -> "Todos"
-            is SpecificDay -> dayOfWeek.getDisplayName(TextStyle.SHORT, Locale("es", "ES"))
+            is SpecificDay -> dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.forLanguageTag("es-ES"))
                 .replaceFirstChar { it.uppercase() }
         }
     }

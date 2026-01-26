@@ -2,9 +2,9 @@ package com.example.unitask.presentation.ui.screens
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,13 +14,19 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Brightness4
 import androidx.compose.material.icons.filled.Brightness7
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -34,11 +40,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -50,14 +52,11 @@ import com.example.unitask.di.AppModule
 import com.example.unitask.presentation.ui.components.DayFilter
 import com.example.unitask.presentation.ui.components.DayFilterChips
 import com.example.unitask.presentation.ui.components.EmptyState
-import com.example.unitask.presentation.ui.components.FocusSensorSettingsDialog
 import com.example.unitask.presentation.ui.components.TaskCard
 import com.example.unitask.presentation.viewmodel.DashboardUiState
 import com.example.unitask.presentation.viewmodel.DashboardViewModel
 import com.example.unitask.presentation.viewmodel.RewardsViewModel
 import com.example.unitask.presentation.viewmodel.TaskUiModel
-import com.example.unitask.settings.FocusSensorSettingsRepository
-import kotlinx.coroutines.launch
 
 /**
  * Envuelve la lógica del ViewModel y las interacciones para exponer la pantalla principal.
@@ -66,7 +65,6 @@ import kotlinx.coroutines.launch
 fun DashboardRoute(
     viewModel: DashboardViewModel = viewModel(factory = AppModule.viewModelFactory),
     rewardsViewModel: RewardsViewModel = viewModel(factory = AppModule.viewModelFactory),
-    focusSensorSettingsRepository: FocusSensorSettingsRepository,
     onAddTaskClick: () -> Unit = {},
     onManageSubjectsClick: () -> Unit = {},
     onAlarmSettingsClick: (String) -> Unit = {},
@@ -76,8 +74,6 @@ fun DashboardRoute(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-    val focusAlertsEnabled by focusSensorSettingsRepository.focusAlertsEnabled.collectAsStateWithLifecycle(initialValue = true)
-    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(state.errorMessage) {
         val message = state.errorMessage
@@ -87,25 +83,21 @@ fun DashboardRoute(
         }
     }
 
-        // Pass UI state, snackbar host, and focus toggle into the stateless screen.
-        DashboardScreen(
-            state = state,
-            snackbarHostState = snackbarHostState,
-            onAddTaskClick = onAddTaskClick,
-            onManageSubjectsClick = onManageSubjectsClick,
-            onAlarmSettingsClick = onAlarmSettingsClick,
-            onTaskClick = onTaskClick,
-            focusAlertsEnabled = focusAlertsEnabled,
-            onFocusAlertsToggle = { enabled ->
-                coroutineScope.launch { focusSensorSettingsRepository.setFocusAlertsEnabled(enabled) }
-            },
-            onTaskCompleted = viewModel::onTaskCompleted,
-            onDayFilterSelected = viewModel::onDayFilterSelected,
-            onLoadMoreTasks = viewModel::loadNextPage,
-            rewardsViewModel = rewardsViewModel,
-            isDarkTheme = isDarkTheme,
-            onToggleTheme = onToggleTheme
-        )
+    DashboardScreen(
+        state = state,
+        snackbarHostState = snackbarHostState,
+        onAddTaskClick = onAddTaskClick,
+        onManageSubjectsClick = onManageSubjectsClick,
+        onAlarmSettingsClick = onAlarmSettingsClick,
+        onTaskClick = onTaskClick,
+        onTaskCompleted = viewModel::onTaskCompleted,
+        onDayFilterSelected = viewModel::onDayFilterSelected,
+        onLoadMoreTasks = viewModel::loadNextPage,
+        onRefresh = viewModel::refresh,
+        rewardsViewModel = rewardsViewModel,
+        isDarkTheme = isDarkTheme,
+        onToggleTheme = onToggleTheme
+    )
 }
 
 /**
@@ -123,9 +115,8 @@ fun DashboardScreen(
     onTaskCompleted: (String) -> Unit,
     onDayFilterSelected: (DayFilter) -> Unit,
     onLoadMoreTasks: () -> Unit,
+    onRefresh: () -> Unit,
     rewardsViewModel: RewardsViewModel,
-    focusAlertsEnabled: Boolean,
-    onFocusAlertsToggle: (Boolean) -> Unit,
     isDarkTheme: Boolean = false,
     onToggleTheme: () -> Unit = {}
 ) {
@@ -141,8 +132,7 @@ fun DashboardScreen(
         onTaskCompleted = onTaskCompleted,
         onDayFilterSelected = onDayFilterSelected,
         onLoadMoreTasks = onLoadMoreTasks,
-        focusAlertsEnabled = focusAlertsEnabled,
-        onFocusAlertsToggle = onFocusAlertsToggle,
+        onRefresh = onRefresh,
         isDarkTheme = isDarkTheme,
         onToggleTheme = onToggleTheme,
         xp = xp,
@@ -166,30 +156,42 @@ fun DashboardScreenForTest(
     onTaskCompleted: (String) -> Unit,
     onDayFilterSelected: (DayFilter) -> Unit = {},
     onLoadMoreTasks: () -> Unit = {},
-    focusAlertsEnabled: Boolean,
-    onFocusAlertsToggle: (Boolean) -> Unit,
+    onRefresh: () -> Unit = {},
     isDarkTheme: Boolean = false,
     onToggleTheme: () -> Unit = {},
     xp: Int = 0,
     level: Int = 1
 ) {
-    // Show/hide the focus settings dialog when the user taps the settings icon.
-    var showFocusSettingsDialog by remember { mutableStateOf(false) }
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        // La app bar superior integra el selector de tema y accesos directos a ajustes de materias.
         topBar = {
             TopAppBar(
-                title = { Text(text = stringResource(id = com.example.unitask.R.string.title_unittask)) },
+                windowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
+                title = { 
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(text = stringResource(id = com.example.unitask.R.string.title_unittask))
+                        // Mostrar racha si es mayor a 0
+                        if (state.currentStreak > 0) {
+                            com.example.unitask.presentation.ui.components.StreakBadge(streak = state.currentStreak)
+                        }
+                    }
+                },
                 actions = {
+                    // Botón de refresh manual
+                    IconButton(onClick = onRefresh) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Actualizar"
+                        )
+                    }
                     IconButton(onClick = onToggleTheme) {
                         Icon(
                             imageVector = if (isDarkTheme) Icons.Default.Brightness7 else Icons.Default.Brightness4,
                             contentDescription = stringResource(id = com.example.unitask.R.string.change_theme)
                         )
-                    }
-                    IconButton(onClick = onManageSubjectsClick) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.List, contentDescription = stringResource(id = com.example.unitask.R.string.manage_subjects))
                     }
                 }
             )
@@ -205,14 +207,20 @@ fun DashboardScreenForTest(
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { innerPadding ->
-        // Lista desplazable que mezcla tareas urgentes, barra de recompensas y el listado completo.
-        LazyColumn(
+        // Pull to refresh wrapper
+        PullToRefreshBox(
+            isRefreshing = state.isRefreshing,
+            onRefresh = onRefresh,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(innerPadding)
         ) {
+            // Lista desplazable que mezcla tareas urgentes, barra de recompensas y el listado completo.
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
             item {
                 UrgentTasksSection(
                     tasks = state.urgentTasks,
@@ -269,16 +277,8 @@ fun DashboardScreenForTest(
                     }
                 }
             }
+            }
         }
-    }
-
-    // Dialogo que permite habilitar o deshabilitar las alertas de enfoque persistidas en DataStore.
-    if (showFocusSettingsDialog) {
-        FocusSensorSettingsDialog(
-            enabled = focusAlertsEnabled,
-            onEnabledChange = onFocusAlertsToggle,
-            onDismissRequest = { showFocusSettingsDialog = false }
-        )
     }
 }
 

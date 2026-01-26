@@ -31,7 +31,9 @@ class SharedPrefsNotificationRepository(private val context: Context, private va
                     triggerAtMillis = o.getLong("triggerAtMillis"),
                     repeatIntervalMillis = if (o.isNull("repeatIntervalMillis")) null else o.getLong("repeatIntervalMillis"),
                     useMinutes = o.getBoolean("useMinutes"),
-                    exact = o.getBoolean("exact")
+                    exact = o.getBoolean("exact"),
+                    taskTitle = if (o.has("taskTitle") && !o.isNull("taskTitle")) o.getString("taskTitle") else null,
+                    subjectName = if (o.has("subjectName") && !o.isNull("subjectName")) o.getString("subjectName") else null
                 )
             }
         } catch (t: Throwable) { emptyList() }
@@ -49,6 +51,8 @@ class SharedPrefsNotificationRepository(private val context: Context, private va
             o.put("repeatIntervalMillis", s.repeatIntervalMillis)
             o.put("useMinutes", s.useMinutes)
             o.put("exact", s.exact)
+            o.put("taskTitle", s.taskTitle)
+            o.put("subjectName", s.subjectName)
             arr.put(o)
         }
         prefs.edit().putString(KEY_NOTIFICATIONS, arr.toString()).apply()
@@ -66,6 +70,8 @@ class SharedPrefsNotificationRepository(private val context: Context, private va
             val intent = android.content.Intent(context, com.example.unitask.notifications.AlarmReceiver::class.java).apply {
                 putExtra("alarm_id", setting.id)
                 putExtra("task_id", setting.taskId)
+                putExtra("task_title", setting.taskTitle ?: "Tarea pendiente")
+                putExtra("subject_name", setting.subjectName ?: "")
             }
             val pending = android.app.PendingIntent.getBroadcast(context, setting.id.hashCode(), intent, android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE)
             alarmScheduler.scheduleExact(setting.id, setting.triggerAtMillis, setting.repeatIntervalMillis, pending)
@@ -97,6 +103,8 @@ class SharedPrefsNotificationRepository(private val context: Context, private va
         val intent = android.content.Intent(context, com.example.unitask.notifications.AlarmReceiver::class.java).apply {
             putExtra("alarm_id", setting.id)
             putExtra("task_id", setting.taskId)
+            putExtra("task_title", setting.taskTitle ?: "Tarea pendiente")
+            putExtra("subject_name", setting.subjectName ?: "")
         }
         val pending = android.app.PendingIntent.getBroadcast(context, setting.id.hashCode(), intent, android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE)
         alarmScheduler.scheduleExact(setting.id, setting.triggerAtMillis, setting.repeatIntervalMillis, pending)

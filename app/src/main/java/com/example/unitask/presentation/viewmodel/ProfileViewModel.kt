@@ -4,10 +4,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.unitask.domain.repository.RewardRepository
 import com.example.unitask.domain.repository.UserRepository
-import com.example.unitask.domain.usecase.GetLevelUseCase
-import com.example.unitask.domain.usecase.GetXpUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,13 +22,12 @@ data class ProfileUiState(
     val tasksCompleted: Int = 0,
     val currentStreak: Int = 0,
     val isLoading: Boolean = false,
+    val isRefreshing: Boolean = false,
     val error: String? = null
 )
 
 class ProfileViewModel(
-    private val userRepository: UserRepository,
-    private val getXpUseCase: GetXpUseCase,
-    private val getLevelUseCase: GetLevelUseCase
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -40,6 +36,23 @@ class ProfileViewModel(
     init {
         loadProfile()
     }
+    
+    /**
+     * Calcula el nivel basándose en el XP.
+     */
+    private fun calculateLevel(xp: Int): Int {
+        var level = 1
+        var requiredXp = 100
+        var totalRequired = requiredXp
+        
+        while (xp >= totalRequired) {
+            level++
+            requiredXp = level * 100
+            totalRequired += requiredXp
+        }
+        
+        return level
+    }
 
     private fun loadProfile() {
         viewModelScope.launch {
@@ -47,9 +60,11 @@ class ProfileViewModel(
             
             try {
                 val user = userRepository.getCurrentUser()
-                val xp = getXpUseCase()
-                val level = getLevelUseCase()
                 val stats = userRepository.getUserStats(user?.id ?: "")
+                
+                // Leer XP directamente desde Room (tabla users)
+                val xp = user?.totalXp ?: 0
+                val level = calculateLevel(xp)
                 
                 _uiState.update {
                     it.copy(
@@ -71,6 +86,40 @@ class ProfileViewModel(
                         error = e.message
                     )
                 }
+            }
+        }
+    }
+    
+    /**
+     * Refresca los datos del perfil.
+     */
+    fun refresh() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isRefreshing = true) }
+            
+            try {
+                val user = userRepository.getCurrentUser()
+                val stats = userRepository.getUserStats(user?.id ?: "")
+                val xp = user?.totalXp ?: 0
+                val level = calculateLevel(xp)
+                
+                kotlinx.coroutines.delay(300)
+                
+                _uiState.update {
+                    it.copy(
+                        userId = user?.id ?: "",
+                        username = user?.username ?: "Usuario",
+                        email = user?.email ?: "",
+                        profileImagePath = user?.profileImagePath,
+                        totalXp = xp,
+                        level = level,
+                        tasksCompleted = stats?.totalTasksCompleted ?: 0,
+                        currentStreak = stats?.currentStreak ?: 0,
+                        isRefreshing = false
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isRefreshing = false, error = e.message) }
             }
         }
     }

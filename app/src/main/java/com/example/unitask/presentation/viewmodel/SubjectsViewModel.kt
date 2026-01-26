@@ -3,6 +3,7 @@ package com.example.unitask.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.unitask.domain.model.Subject
+import com.example.unitask.domain.repository.UserRepository
 import com.example.unitask.domain.usecase.AddSubjectUseCase
 import com.example.unitask.domain.usecase.DeleteSubjectUseCase
 import com.example.unitask.domain.usecase.EditSubjectUseCase
@@ -16,10 +17,11 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 class SubjectsViewModel(
-    getSubjectsUseCase: GetSubjectsUseCase,
+    private val getSubjectsUseCase: GetSubjectsUseCase,
     private val addSubjectUseCase: AddSubjectUseCase,
     private val editSubjectUseCase: EditSubjectUseCase,
-    private val deleteSubjectUseCase: DeleteSubjectUseCase
+    private val deleteSubjectUseCase: DeleteSubjectUseCase,
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SubjectsUiState())
@@ -35,16 +37,45 @@ class SubjectsViewModel(
     }
 
     init {
+        loadUserStreak()
+        observeSubjects()
+    }
+    
+    private fun loadUserStreak() {
+        viewModelScope.launch {
+            try {
+                val user = userRepository.getCurrentUser()
+                val stats = userRepository.getUserStats(user?.id ?: "")
+                _uiState.value = _uiState.value.copy(currentStreak = stats?.currentStreak ?: 0)
+            } catch (e: Exception) {
+                // Ignorar error de racha
+            }
+        }
+    }
+    
+    private fun observeSubjects() {
         viewModelScope.launch {
             getSubjectsUseCase()
                 .catch { error ->
-                    _uiState.value = SubjectsUiState(errorMessage = error.message)
+                    _uiState.value = _uiState.value.copy(errorMessage = error.message)
                 }
                 .collect { subjects ->
-                    _uiState.value = SubjectsUiState(
+                    _uiState.value = _uiState.value.copy(
                         subjects = subjects.map { it.toItem() }
                     )
                 }
+        }
+    }
+    
+    /**
+     * Refresca los datos de las materias.
+     */
+    fun refresh() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isRefreshing = true)
+            loadUserStreak()
+            kotlinx.coroutines.delay(300)
+            _uiState.value = _uiState.value.copy(isRefreshing = false)
         }
     }
 
@@ -114,6 +145,8 @@ class SubjectsViewModel(
 
 data class SubjectsUiState(
     val subjects: List<SubjectItem> = emptyList(),
+    val currentStreak: Int = 0,
+    val isRefreshing: Boolean = false,
     val errorMessage: String? = null
 )
 

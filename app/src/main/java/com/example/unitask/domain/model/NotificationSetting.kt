@@ -8,5 +8,7 @@ data class NotificationSetting(
     val triggerAtMillis: Long,                // Momento en que se debe disparar.
     val repeatIntervalMillis: Long?,          // Intervalo de repetición (opcional).
     val useMinutes: Boolean,                  // Si usa minutos en vez de horas.
-    val exact: Boolean                         // Si requiere alarma exacta.
+    val exact: Boolean,                       // Si requiere alarma exacta.
+    val taskTitle: String? = null,            // Título de la tarea para la notificación.
+    val subjectName: String? = null           // Nombre de la materia para la notificación.
 )

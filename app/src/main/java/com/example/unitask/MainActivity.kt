@@ -19,13 +19,9 @@ import android.content.pm.PackageManager
 import com.example.unitask.di.AppModule
 import com.example.unitask.notifications.NotificationHelper
 import com.example.unitask.presentation.navigation.UniTaskApp
-import com.example.unitask.sensors.FocusSensorManager
 import com.example.unitask.ui.theme.UniTaskTheme
-import com.example.unitask.settings.FocusSensorSettingsRepository
 
 class MainActivity : ComponentActivity() {
-    private lateinit var focusSensorManager: FocusSensorManager
-    private val focusSensorSettingsRepository by lazy { FocusSensorSettingsRepository(applicationContext) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,8 +32,6 @@ class MainActivity : ComponentActivity() {
             ?: throw IllegalStateException("NotificationManager unavailable")
         val notificationHelper = NotificationHelper(applicationContext, notificationManager)
         notificationHelper.createChannels()
-        // Mantiene un FocusSensorManager vivo durante el ciclo de vida para alertas de enfoque.
-        focusSensorManager = FocusSensorManager(applicationContext, notificationHelper)
 
         // Solicita permiso de notificaciones en tiempo de ejecución (Android 13+).
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -73,21 +67,9 @@ class MainActivity : ComponentActivity() {
             UniTaskTheme(darkTheme = isDarkTheme.value) {
                 UniTaskApp(
                     isDarkTheme = isDarkTheme.value,
-                    onToggleTheme = { isDarkTheme.value = !isDarkTheme.value },
-                    focusSensorManager = focusSensorManager,
-                    focusSensorSettingsRepository = focusSensorSettingsRepository
+                    onToggleTheme = { isDarkTheme.value = !isDarkTheme.value }
                 )
             }
         }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        focusSensorManager.start()
-    }
-
-    override fun onPause() {
-        focusSensorManager.stop()
-        super.onPause()
     }
 }

@@ -38,6 +38,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -100,6 +101,7 @@ fun SubjectsRoute(
             )
         },
         onDelete = { subject -> subjectToDelete = subject },
+        onRefresh = viewModel::refresh,
         isDarkTheme = isDarkTheme,
         onToggleTheme = onToggleTheme
     )
@@ -144,25 +146,25 @@ fun SubjectsScreenForTest(
     onAddClick: () -> Unit,
     onEdit: (SubjectItem) -> Unit,
     onDelete: (SubjectItem) -> Unit,
+    onRefresh: () -> Unit = {},
     isDarkTheme: Boolean = false,
     onToggleTheme: () -> Unit = {}
 ) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
-            TopAppBar(
-                title = { Text(text = stringResource(id = com.example.unitask.R.string.subjects_title)) },
-                navigationIcon = {
-                        IconButton(onClick = onBack) {
-                            Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(id = com.example.unitask.R.string.back))
-                    }
-                },
+            com.example.unitask.presentation.ui.components.AppHeader(
+                title = stringResource(id = com.example.unitask.R.string.subjects_title),
+                currentStreak = state.currentStreak,
+                showBackButton = true,
+                onBackClick = onBack,
+                onRefresh = onRefresh,
                 actions = {
-                        IconButton(onClick = onToggleTheme) {
-                            Icon(
-                                imageVector = if (isDarkTheme) Icons.Default.Brightness7 else Icons.Default.Brightness4,
-                                contentDescription = stringResource(id = com.example.unitask.R.string.change_theme)
-                            )
+                    IconButton(onClick = onToggleTheme) {
+                        Icon(
+                            imageVector = if (isDarkTheme) Icons.Default.Brightness7 else Icons.Default.Brightness4,
+                            contentDescription = stringResource(id = com.example.unitask.R.string.change_theme)
+                        )
                     }
                 }
             )
@@ -178,22 +180,28 @@ fun SubjectsScreenForTest(
             }
         }
     ) { innerPadding ->
-        if (state.subjects.isEmpty()) {
-            EmptySubjectsState(modifier = Modifier.padding(innerPadding))
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(state.subjects, key = { it.id }) { subject ->
-                    SubjectCard(
-                        subject = subject,
-                        onEdit = { onEdit(subject) },
-                        onDelete = { onDelete(subject) }
-                    )
+        PullToRefreshBox(
+            isRefreshing = state.isRefreshing,
+            onRefresh = onRefresh,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            if (state.subjects.isEmpty()) {
+                EmptySubjectsState(modifier = Modifier.fillMaxSize())
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(state.subjects, key = { it.id }) { subject ->
+                        SubjectCard(
+                            subject = subject,
+                            onEdit = { onEdit(subject) },
+                            onDelete = { onDelete(subject) }
+                        )
+                    }
                 }
             }
         }
@@ -289,44 +297,59 @@ private fun SubjectDialog(
     var name by remember(state.id) { mutableStateOf(state.name) }
     var colorHex by remember(state.id) { mutableStateOf(state.colorHex) }
     var teacher by remember(state.id) { mutableStateOf(state.teacher) }
+    var nameError by remember { mutableStateOf<String?>(null) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(text = if (state.id == null) stringResource(id = com.example.unitask.R.string.new_subject) else stringResource(id = com.example.unitask.R.string.edit_subject)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 OutlinedTextField(
                     value = name,
-                    onValueChange = { name = it },
+                    onValueChange = { 
+                        name = it
+                        nameError = when {
+                            it.isBlank() -> "El nombre es requerido"
+                            it.length > 30 -> "Máximo 30 caracteres"
+                            else -> null
+                        }
+                    },
                     label = { Text(text = stringResource(id = com.example.unitask.R.string.name_label)) },
                     singleLine = true,
+                    isError = nameError != null,
+                    supportingText = nameError?.let { { Text(it) } },
                     modifier = Modifier.fillMaxWidth()
                 )
-                OutlinedTextField(
-                    value = colorHex,
-                    onValueChange = { colorHex = it },
-                    label = { Text(text = stringResource(id = com.example.unitask.R.string.color_label)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                
                 OutlinedTextField(
                     value = teacher,
-                    onValueChange = { teacher = it },
+                    onValueChange = { teacher = it.take(40) },
                     label = { Text(text = stringResource(id = com.example.unitask.R.string.teacher_label)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Color picker visual
+                com.example.unitask.presentation.ui.components.ColorPicker(
+                    selectedColor = colorHex,
+                    onColorSelected = { colorHex = it }
                 )
             }
         },
         confirmButton = {
             TextButton(
-                enabled = name.isNotBlank(),
+                enabled = name.isNotBlank() && name.length <= 30 && nameError == null,
                 onClick = {
                     onConfirm(
                         SubjectDialogState(
                             id = state.id,
                             name = name.trim(),
-                            colorHex = colorHex.trim().ifBlank { "#FF6F61" },
+                            colorHex = colorHex.trim().ifBlank { "#FF6B6B" },
                             teacher = teacher.trim()
                         )
                     )

@@ -94,6 +94,7 @@ fun AlarmSettingsScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
+                windowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
                 title = { Text(text = stringResource(R.string.alarm_settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {

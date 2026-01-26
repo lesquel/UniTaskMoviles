@@ -16,7 +16,12 @@ class RescheduleWorker(appContext: Context, params: WorkerParameters) : Coroutin
             AppModule.configureAppModule(applicationContext)
             val repo = AppModule.provideNotificationRepository()
             val all = repo.observeAll().first()
-            all.forEach { setting ->
+            val currentTime = System.currentTimeMillis()
+            
+            // Solo reprogramar alarmas futuras que estén habilitadas
+            all.filter { setting -> 
+                setting.enabled && setting.triggerAtMillis > currentTime 
+            }.forEach { setting ->
                 repo.schedule(setting)
             }
             return Result.success()

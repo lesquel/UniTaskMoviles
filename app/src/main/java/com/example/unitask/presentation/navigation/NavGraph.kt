@@ -5,12 +5,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import android.net.Uri
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -20,8 +16,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.unitask.presentation.ui.components.BottomNavBar
-import com.example.unitask.presentation.ui.components.BottomNavDestination
-import com.example.unitask.presentation.ui.components.FocusSensorBanner
 import com.example.unitask.presentation.ui.screens.AddTaskRoute
 import com.example.unitask.presentation.ui.screens.AlarmSettingsScreen
 import com.example.unitask.presentation.ui.screens.DashboardRoute
@@ -30,8 +24,6 @@ import com.example.unitask.presentation.ui.screens.LoginRoute
 import com.example.unitask.presentation.ui.screens.ProfileRoute
 import com.example.unitask.presentation.ui.screens.RegisterRoute
 import com.example.unitask.presentation.ui.screens.SubjectsRoute
-import com.example.unitask.sensors.FocusSensorManager
-import com.example.unitask.settings.FocusSensorSettingsRepository
 
 // Navigation destinations that identify each screen in the Compose NavHost.
 private sealed class UniTaskDestination(val route: String) {
@@ -59,26 +51,20 @@ private sealed class UniTaskDestination(val route: String) {
 private val bottomNavRoutes = setOf(
     UniTaskDestination.Dashboard.route,
     UniTaskDestination.Subjects.route,
+    UniTaskDestination.AddTask.route,
     UniTaskDestination.Profile.route,
     UniTaskDestination.Leaderboard.route
 )
 
 /**
- * Root composable that hosts navigation plus the focus alert banner.
+ * Root composable que aloja la navegación de la app.
  */
 @Composable
 fun UniTaskApp(
     modifier: Modifier = Modifier,
     isDarkTheme: Boolean,
-    onToggleTheme: () -> Unit,
-    focusSensorManager: FocusSensorManager,
-    focusSensorSettingsRepository: FocusSensorSettingsRepository
+    onToggleTheme: () -> Unit
 ) {
-    val focusState by focusSensorManager.state.collectAsState()
-    val focusAlertsEnabled by focusSensorSettingsRepository.focusAlertsEnabled.collectAsState(initial = true)
-    LaunchedEffect(focusAlertsEnabled) {
-        focusSensorManager.setAlertsEnabled(focusAlertsEnabled)
-    }
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route?.substringBefore("?")
@@ -113,17 +99,8 @@ fun UniTaskApp(
                 navController = navController,
                 modifier = Modifier.fillMaxSize(),
                 isDarkTheme = isDarkTheme,
-                onToggleTheme = onToggleTheme,
-                focusSensorSettingsRepository = focusSensorSettingsRepository
+                onToggleTheme = onToggleTheme
             )
-            if (focusAlertsEnabled) {
-                FocusSensorBanner(
-                    state = focusState,
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .padding(top = 12.dp)
-                )
-            }
         }
     }
 }
@@ -136,8 +113,7 @@ private fun UniTaskNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
     isDarkTheme: Boolean,
-    onToggleTheme: () -> Unit,
-    focusSensorSettingsRepository: FocusSensorSettingsRepository
+    onToggleTheme: () -> Unit
 ) {
     NavHost(
         navController = navController,
@@ -147,7 +123,6 @@ private fun UniTaskNavHost(
         composable(UniTaskDestination.Dashboard.route) {
             DashboardRoute(
                 onAddTaskClick = { navController.navigate(UniTaskDestination.AddTask.route) },
-                focusSensorSettingsRepository = focusSensorSettingsRepository,
                 onTaskClick = { taskId -> navController.navigate(UniTaskDestination.AddTask.createRoute(taskId)) },
                 onManageSubjectsClick = { navController.navigate(UniTaskDestination.Subjects.route) },
                 onAlarmSettingsClick = { id -> navController.navigate(UniTaskDestination.AlarmSettings.createRoute(id)) },
@@ -168,8 +143,7 @@ private fun UniTaskNavHost(
             val taskId = backStackEntry.arguments?.getString(UniTaskDestination.AddTask.ARG_TASK_ID)
             AddTaskRoute(
                 taskId = taskId,
-                onBack = { navController.popBackStack() },
-                onAlarmSettingsClick = { navController.navigate(UniTaskDestination.AlarmSettings.route) }
+                onBack = { navController.popBackStack() }
             )
         }
         composable(UniTaskDestination.Subjects.route) {

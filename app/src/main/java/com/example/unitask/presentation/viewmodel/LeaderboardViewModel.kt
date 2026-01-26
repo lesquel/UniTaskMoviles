@@ -33,7 +33,9 @@ data class LeaderboardUiState(
     val currentUserId: String? = null,
     val currentUserPosition: Int? = null,
     val currentUserData: UserRankingItem? = null,
-    val isLoading: Boolean = false
+    val currentStreak: Int = 0,
+    val isLoading: Boolean = false,
+    val isRefreshing: Boolean = false
 )
 
 class LeaderboardViewModel(
@@ -69,6 +71,7 @@ class LeaderboardViewModel(
             
             try {
                 val currentUser = userRepository.getCurrentUser()
+                val stats = userRepository.getUserStats(currentUser?.id ?: "")
                 val rankings = userRepository.getLeaderboard(
                     subjectId = _uiState.value.selectedFilter.subjectId,
                     limit = 10
@@ -87,11 +90,52 @@ class LeaderboardViewModel(
                         currentUserId = currentUser?.id,
                         currentUserPosition = currentUserPosition,
                         currentUserData = currentUserData,
+                        currentStreak = stats?.currentStreak ?: 0,
                         isLoading = false
                     )
                 }
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false) }
+            }
+        }
+    }
+    
+    /**
+     * Refresca los datos del leaderboard.
+     */
+    fun refresh() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isRefreshing = true) }
+            
+            try {
+                val currentUser = userRepository.getCurrentUser()
+                val stats = userRepository.getUserStats(currentUser?.id ?: "")
+                val rankings = userRepository.getLeaderboard(
+                    subjectId = _uiState.value.selectedFilter.subjectId,
+                    limit = 10
+                )
+                
+                val currentUserPosition = if (currentUser != null) {
+                    rankings.indexOfFirst { it.userId == currentUser.id }
+                        .let { if (it >= 0) it + 1 else null }
+                } else null
+                
+                val currentUserData = rankings.find { it.userId == currentUser?.id }
+                
+                kotlinx.coroutines.delay(300)
+                
+                _uiState.update {
+                    it.copy(
+                        rankings = rankings,
+                        currentUserId = currentUser?.id,
+                        currentUserPosition = currentUserPosition,
+                        currentUserData = currentUserData,
+                        currentStreak = stats?.currentStreak ?: 0,
+                        isRefreshing = false
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isRefreshing = false) }
             }
         }
     }

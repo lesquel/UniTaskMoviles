@@ -3,7 +3,6 @@ package com.example.unitask.presentation.ui.screens
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -13,10 +12,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -38,9 +39,9 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.ui.res.stringResource
 import androidx.compose.material3.TopAppBar
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -75,8 +76,7 @@ import java.util.Locale
 fun AddTaskRoute(
     taskId: String? = null,
     onBack: () -> Unit,
-    onTaskSaved: () -> Unit = onBack,
-    onAlarmSettingsClick: () -> Unit
+    onTaskSaved: () -> Unit = onBack
 ) {
     val viewModel: AddTaskViewModel = viewModel(factory = AppModule.addTaskViewModelFactory(taskId))
     val state by viewModel.uiState.collectAsState()
@@ -118,8 +118,7 @@ fun AddTaskRoute(
         onDateSelected = viewModel::onDateSelected,
         onTimeSelected = viewModel::onTimeSelected,
         onAlarmTemplateToggled = viewModel::onAlarmTemplateToggled,
-        onSubmit = viewModel::submit,
-        onAlarmSettingsClick = onAlarmSettingsClick
+        onSubmit = viewModel::submit
     )
 }
 
@@ -138,8 +137,7 @@ fun AddTaskScreen(
     onDateSelected: (LocalDate) -> Unit,
     onTimeSelected: (LocalTime) -> Unit,
     onAlarmTemplateToggled: (AlarmTemplate) -> Unit = {},
-    onSubmit: () -> Unit,
-    onAlarmSettingsClick: () -> Unit
+    onSubmit: () -> Unit
 ) {
     val errorMessage = state.error?.let { error ->
         when (error) {
@@ -165,13 +163,11 @@ fun AddTaskScreen(
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
-            TopAppBar(
-                title = { Text(text = stringResource(id = if (isEditing) com.example.unitask.R.string.edit_task else com.example.unitask.R.string.new_task)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(id = com.example.unitask.R.string.back))
-                    }
-                }
+            com.example.unitask.presentation.ui.components.AppHeader(
+                title = stringResource(id = if (isEditing) com.example.unitask.R.string.edit_task else com.example.unitask.R.string.new_task),
+                currentStreak = state.currentStreak,
+                showBackButton = true,
+                onBackClick = onBack
             )
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
@@ -180,15 +176,29 @@ fun AddTaskScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 32.dp)
+                .imePadding(),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
+            Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 value = state.title,
                 onValueChange = onTitleChanged,
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text(text = stringResource(id = com.example.unitask.R.string.title_label)) },
-                singleLine = true
+                singleLine = true,
+                isError = state.error == AddTaskError.TitleRequired || state.error == AddTaskError.TitleTooLong,
+                supportingText = {
+                    Text(
+                        text = "${state.title.length}/${AddTaskViewModel.MAX_TITLE_LENGTH}",
+                        color = if (state.title.length > AddTaskViewModel.MAX_TITLE_LENGTH) 
+                            MaterialTheme.colorScheme.error 
+                        else 
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             )
             SubjectSelector(
                 subjects = state.subjects,
@@ -247,20 +257,12 @@ fun AddTaskScreen(
                 Text(text = errorText, color = MaterialTheme.colorScheme.error)
             }
             Spacer(modifier = Modifier.height(16.dp))
-            Row(
+            Button(
+                onClick = onSubmit,
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                enabled = !state.isSubmitting && state.subjects.isNotEmpty()
             ) {
-                TextButton(onClick = onAlarmSettingsClick) {
-                    Text(text = stringResource(id = com.example.unitask.R.string.configure_alarms))
-                }
-                Button(
-                    onClick = onSubmit,
-                    enabled = !state.isSubmitting && state.subjects.isNotEmpty()
-                ) {
-                    Text(text = if (state.isSubmitting) stringResource(id = com.example.unitask.R.string.saving) else stringResource(id = if (isEditing) com.example.unitask.R.string.update_task else com.example.unitask.R.string.save_task))
-                }
+                Text(text = if (state.isSubmitting) stringResource(id = com.example.unitask.R.string.saving) else stringResource(id = if (isEditing) com.example.unitask.R.string.update_task else com.example.unitask.R.string.save_task))
             }
         }
     }

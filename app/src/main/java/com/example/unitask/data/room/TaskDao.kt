@@ -19,6 +19,12 @@ interface TaskDao {
      */
     @Query("SELECT * FROM tasks ORDER BY dueDateTime ASC")
     fun getAllTasks(): Flow<List<TaskEntity>>
+    
+    /**
+     * Returns a reactive stream of tasks for a specific user, ordered by due date.
+     */
+    @Query("SELECT * FROM tasks WHERE userId = :userId ORDER BY dueDateTime ASC")
+    fun getTasksByUserId(userId: String): Flow<List<TaskEntity>>
 
     /**
      * Inserts or Updates a task. If ID exists, it replaces the row.

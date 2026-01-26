@@ -6,6 +6,7 @@ import java.time.LocalDateTime
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 
 class InMemoryTaskRepository(
@@ -18,6 +19,11 @@ class InMemoryTaskRepository(
 
     // Flujo observable con las tareas ordenadas.
     override fun getTasksFlow(): Flow<List<Task>> = _tasks.asStateFlow()
+    
+    // Flujo observable filtrado por usuario.
+    override fun getTasksFlowByUserId(userId: String): Flow<List<Task>> {
+        return _tasks.map { tasks -> tasks.filter { it.userId == userId } }
+    }
 
     // Inserta una tarea nueva asegurando validez y que el ID no exista.
     override suspend fun addTask(task: Task) {

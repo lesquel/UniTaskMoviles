@@ -8,6 +8,7 @@ import java.util.UUID
  */
 data class Task(
     val id: String = UUID.randomUUID().toString(),               // Identificador único.
+    val userId: String,                                          // ID del usuario propietario.
     val title: String,                                          // Título descriptivo de la tarea.
     val subjectId: String,                                      // ID de la asignatura asociada.
     val dueDateTime: LocalDateTime,                            // Fecha y hora de entrega.

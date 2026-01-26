@@ -16,7 +16,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  */
 @Database(
     entities = [TaskEntity::class, SubjectEntity::class, UserEntity::class, UserStatsEntity::class, AlarmTemplateEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 // Registers custom type converters (e.g. for LocalDateTime <-> String).
@@ -68,6 +68,40 @@ abstract class UniTaskDatabase : RoomDatabase() {
                         isDefault INTEGER NOT NULL DEFAULT 0
                     )
                 """)
+            }
+        }
+        
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Agregar columna userId a la tabla tasks
+                // Primero creamos una tabla temporal con la nueva estructura
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS tasks_new (
+                        id TEXT PRIMARY KEY NOT NULL,
+                        userId TEXT NOT NULL DEFAULT '',
+                        title TEXT NOT NULL,
+                        subjectId TEXT NOT NULL,
+                        dueDateTime TEXT NOT NULL,
+                        createdAt TEXT NOT NULL,
+                        isCompleted INTEGER NOT NULL DEFAULT 0
+                    )
+                """)
+                
+                // Copiar datos existentes (con userId vacío por defecto)
+                db.execSQL("""
+                    INSERT INTO tasks_new (id, userId, title, subjectId, dueDateTime, createdAt, isCompleted)
+                    SELECT id, '', title, subjectId, dueDateTime, createdAt, isCompleted FROM tasks
+                """)
+                
+                // Eliminar la tabla antigua
+                db.execSQL("DROP TABLE tasks")
+                
+                // Renombrar la nueva tabla
+                db.execSQL("ALTER TABLE tasks_new RENAME TO tasks")
+                
+                // Crear índices
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_tasks_subjectId ON tasks(subjectId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_tasks_userId ON tasks(userId)")
             }
         }
     }

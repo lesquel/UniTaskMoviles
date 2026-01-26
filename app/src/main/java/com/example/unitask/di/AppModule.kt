@@ -118,6 +118,7 @@ object AppModule {
         initializer {
             val rewardRepo = provideRewardRepository()
             val notificationRepo = provideNotificationRepository()
+            val userRepo = provideUserRepository()
             val awardXpUseCase = AwardXpUseCase(rewardRepo)
             val getAllNotificationsUseCase = GetAllNotificationsUseCase(notificationRepo)
             DashboardViewModel(
@@ -126,7 +127,8 @@ object AppModule {
                 getSubjectsUseCase = getSubjectsUseCase,
                 getAllNotificationsUseCase = getAllNotificationsUseCase,
                 completeTaskUseCase = completeTaskUseCase,
-                awardXpUseCase = awardXpUseCase
+                awardXpUseCase = awardXpUseCase,
+                userRepository = userRepo
             )
         }
         initializer {
@@ -153,18 +155,23 @@ object AppModule {
                 getSubjectsUseCase = getSubjectsUseCase,
                 addSubjectUseCase = addSubjectUseCase,
                 editSubjectUseCase = editSubjectUseCase,
-                deleteSubjectUseCase = deleteSubjectUseCase
+                deleteSubjectUseCase = deleteSubjectUseCase,
+                userRepository = provideUserRepository()
             )
         }
     }
 
     fun addTaskViewModelFactory(initialTaskId: String?): ViewModelProvider.Factory = viewModelFactory {
         initializer {
+            val notificationRepo = provideNotificationRepository()
+            val userRepo = provideUserRepository()
             AddTaskViewModel(
                 getSubjectsUseCase = getSubjectsUseCase,
                 addTaskUseCase = addTaskUseCase,
                 updateTaskUseCase = updateTaskUseCase,
                 getTaskByIdUseCase = getTaskByIdUseCase,
+                scheduleAlarmUseCase = ScheduleAlarmUseCase(notificationRepo),
+                userRepository = userRepo,
                 nowProvider = { LocalDateTime.now() },
                 initialTaskId = initialTaskId
             )
@@ -181,11 +188,8 @@ object AppModule {
 
     fun profileViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {
         initializer {
-            val rewardRepo = provideRewardRepository()
             ProfileViewModel(
-                userRepository = provideUserRepository(),
-                getXpUseCase = GetXpUseCase(rewardRepo),
-                getLevelUseCase = GetLevelUseCase(rewardRepo)
+                userRepository = provideUserRepository()
             )
         }
     }
@@ -208,7 +212,7 @@ object AppModule {
                 UniTaskDatabase::class.java,
                 "unitask_database"
             )
-            .addMigrations(UniTaskDatabase.MIGRATION_1_2, UniTaskDatabase.MIGRATION_2_3)
+            .addMigrations(UniTaskDatabase.MIGRATION_1_2, UniTaskDatabase.MIGRATION_2_3, UniTaskDatabase.MIGRATION_3_4)
             .build()
         }
 

@@ -3,15 +3,20 @@ package com.example.unitask.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.unitask.domain.model.AlarmTemplate
+import com.example.unitask.domain.model.NotificationSetting
 import com.example.unitask.domain.model.Subject
 import com.example.unitask.domain.model.Task
+import com.example.unitask.domain.repository.UserRepository
 import com.example.unitask.domain.usecase.AddTaskUseCase
 import com.example.unitask.domain.usecase.GetSubjectsUseCase
 import com.example.unitask.domain.usecase.GetTaskByIdUseCase
+import com.example.unitask.domain.usecase.ScheduleAlarmUseCase
 import com.example.unitask.domain.usecase.UpdateTaskUseCase
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.ZoneId
+import java.util.UUID
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -27,6 +32,8 @@ class AddTaskViewModel(
     private val addTaskUseCase: AddTaskUseCase,
     private val updateTaskUseCase: UpdateTaskUseCase,
     private val getTaskByIdUseCase: GetTaskByIdUseCase,
+    private val scheduleAlarmUseCase: ScheduleAlarmUseCase,
+    private val userRepository: UserRepository,
     private val nowProvider: () -> LocalDateTime,
     initialTaskId: String? = null
 ) : ViewModel() {
@@ -44,6 +51,7 @@ class AddTaskViewModel(
     private val _events = MutableSharedFlow<AddTaskEvent>()
     val events = _events
     private var editingTask: Task? = null
+    private var currentUserId: String? = null
 
     companion object {
         const val MAX_TITLE_LENGTH = 50
@@ -52,6 +60,13 @@ class AddTaskViewModel(
     init {
         resetDueDateDefaults()
         viewModelScope.launch {
+            // Obtener el usuario actual y su racha
+            val user = userRepository.getCurrentUser()
+            currentUserId = user?.id
+            
+            val stats = userRepository.getUserStats(user?.id ?: "")
+            _uiState.updateDetails { copy(currentStreak = stats?.currentStreak ?: 0) }
+            
             subjectsFlow.collect { options ->
                 _uiState.updateDetails {
                     val updatedSelection = selectedSubjectId ?: options.firstOrNull()?.id
@@ -127,6 +142,12 @@ class AddTaskViewModel(
 
         val dueDateTime = LocalDateTime.of(date, time)
 
+        val userId = currentUserId
+        if (userId.isNullOrEmpty()) {
+            _uiState.updateDetails { copy(error = AddTaskError.SubmitError("Debes iniciar sesión para crear tareas")) }
+            return
+        }
+
         viewModelScope.launch {
             _uiState.updateDetails { copy(isSubmitting = true, error = null) }
             runCatching {
@@ -140,6 +161,7 @@ class AddTaskViewModel(
                     updatedTask
                 } else {
                     addTaskUseCase(
+                        userId = userId,
                         title = rawTitle,
                         subjectId = subjectId,
                         dueDateTime = dueDateTime
@@ -147,6 +169,19 @@ class AddTaskViewModel(
                 }
             }
                 .onSuccess { task ->
+                    // Crear alarmas basadas en las plantillas seleccionadas
+                    val selectedTemplates = current.selectedAlarmTemplates
+                    if (selectedTemplates.isNotEmpty()) {
+                        val subjectName = current.subjects.find { it.id == subjectId }?.name ?: ""
+                        scheduleAlarmsForTask(
+                            taskId = task.id,
+                            dueDateTime = dueDateTime,
+                            selectedTemplateIds = selectedTemplates,
+                            taskTitle = rawTitle,
+                            subjectName = subjectName
+                        )
+                    }
+                    
                     val isUpdate = current.editingTaskId != null
                     _events.emit(AddTaskEvent.Success(task.id, isUpdate))
                     editingTask = null
@@ -159,6 +194,43 @@ class AddTaskViewModel(
                     val submitError = AddTaskError.SubmitError(error.message ?: "Error al guardar")
                     _uiState.updateDetails { copy(isSubmitting = false, error = submitError) }
                     _events.emit(AddTaskEvent.Error(submitError))
+                }
+        }
+    }
+    
+    /**
+     * Programa alarmas para la tarea basándose en las plantillas seleccionadas.
+     */
+    private fun scheduleAlarmsForTask(
+        taskId: String,
+        dueDateTime: LocalDateTime,
+        selectedTemplateIds: Set<String>,
+        taskTitle: String,
+        subjectName: String
+    ) {
+        viewModelScope.launch {
+            val dueDateMillis = dueDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            
+            alarmTemplates
+                .filter { it.id in selectedTemplateIds }
+                .forEach { template ->
+                    val triggerAtMillis = dueDateMillis - (template.minutesBefore * 60 * 1000L)
+                    
+                    // Solo programar si la alarma es en el futuro
+                    if (triggerAtMillis > System.currentTimeMillis()) {
+                        val notificationSetting = NotificationSetting(
+                            id = UUID.randomUUID().toString(),
+                            taskId = taskId,
+                            enabled = true,
+                            triggerAtMillis = triggerAtMillis,
+                            repeatIntervalMillis = null,
+                            useMinutes = template.minutesBefore < 60,
+                            exact = true,
+                            taskTitle = taskTitle,
+                            subjectName = subjectName
+                        )
+                        scheduleAlarmUseCase(notificationSetting)
+                    }
                 }
         }
     }
@@ -220,7 +292,8 @@ data class AddTaskUiState(
     val selectedAlarmTemplates: Set<String> = emptySet(), // IDs de plantillas seleccionadas
     val isSubmitting: Boolean = false,
     val error: AddTaskError? = null,
-    val editingTaskId: String? = null
+    val editingTaskId: String? = null,
+    val currentStreak: Int = 0
 )
 
 /**

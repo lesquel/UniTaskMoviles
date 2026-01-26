@@ -15,12 +15,14 @@ class AddTaskUseCase(
  * Caso de uso para crear una tarea validando que exista la asignatura referenciada.
  */
     suspend operator fun invoke(
+        userId: String,
         title: String,
         subjectId: String,
         dueDateTime: LocalDateTime
     ): Task {
         val cleanedTitle = title.trim()
         require(cleanedTitle.isNotEmpty()) { "Task title cannot be blank." }
+        require(userId.isNotBlank()) { "User id is required." }
         require(subjectId.isNotBlank()) { "Subject id is required." }
 
         val now = nowProvider()
@@ -32,6 +34,7 @@ class AddTaskUseCase(
         check(subjectExists) { "Subject not found." }
 
         val task = Task(
+            userId = userId,
             title = cleanedTitle,
             subjectId = subjectId,
             dueDateTime = dueDateTime,

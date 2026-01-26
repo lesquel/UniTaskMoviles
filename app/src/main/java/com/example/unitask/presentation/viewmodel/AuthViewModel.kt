@@ -61,14 +61,28 @@ class AuthViewModel(
             _uiState.update { it.copy(isLoading = true) }
             
             val state = _uiState.value
-            val result = userRepository.login(state.usernameOrEmail, state.password)
+            
+            // Validaciones
+            if (state.usernameOrEmail.isBlank()) {
+                _events.send(AuthEvent.Error("Ingresa tu usuario o correo electrónico"))
+                _uiState.update { it.copy(isLoading = false) }
+                return@launch
+            }
+            
+            if (state.password.isBlank()) {
+                _events.send(AuthEvent.Error("Ingresa tu contraseña"))
+                _uiState.update { it.copy(isLoading = false) }
+                return@launch
+            }
+            
+            val result = userRepository.login(state.usernameOrEmail.trim(), state.password)
             
             result.fold(
                 onSuccess = {
                     _events.send(AuthEvent.LoginSuccess)
                 },
                 onFailure = { error ->
-                    _events.send(AuthEvent.Error(error.message ?: "Error al iniciar sesión"))
+                    _events.send(AuthEvent.Error(error.message ?: "Usuario o contraseña incorrectos"))
                 }
             )
             
@@ -83,6 +97,36 @@ class AuthViewModel(
             val state = _uiState.value
             
             // Validaciones
+            if (state.username.isBlank()) {
+                _events.send(AuthEvent.Error("El nombre de usuario es requerido"))
+                _uiState.update { it.copy(isLoading = false) }
+                return@launch
+            }
+            
+            if (state.username.length < 3) {
+                _events.send(AuthEvent.Error("El nombre de usuario debe tener al menos 3 caracteres"))
+                _uiState.update { it.copy(isLoading = false) }
+                return@launch
+            }
+            
+            if (state.username.length > 30) {
+                _events.send(AuthEvent.Error("El nombre de usuario no puede exceder 30 caracteres"))
+                _uiState.update { it.copy(isLoading = false) }
+                return@launch
+            }
+            
+            if (state.email.isBlank()) {
+                _events.send(AuthEvent.Error("El correo electrónico es requerido"))
+                _uiState.update { it.copy(isLoading = false) }
+                return@launch
+            }
+            
+            if (!android.util.Patterns.EMAIL_ADDRESS.matcher(state.email).matches()) {
+                _events.send(AuthEvent.Error("El formato del correo electrónico no es válido"))
+                _uiState.update { it.copy(isLoading = false) }
+                return@launch
+            }
+            
             if (state.password.length < 6) {
                 _events.send(AuthEvent.Error("La contraseña debe tener al menos 6 caracteres"))
                 _uiState.update { it.copy(isLoading = false) }
@@ -95,7 +139,7 @@ class AuthViewModel(
                 return@launch
             }
             
-            val result = userRepository.register(state.username, state.email, state.password)
+            val result = userRepository.register(state.username.trim(), state.email.trim(), state.password)
             
             result.fold(
                 onSuccess = {

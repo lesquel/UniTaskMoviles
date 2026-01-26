@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.unitask.domain.model.NotificationSetting
 import com.example.unitask.domain.model.Subject
 import com.example.unitask.domain.model.Task
+import com.example.unitask.domain.repository.UserRepository
 import com.example.unitask.domain.usecase.AwardXpUseCase
 import com.example.unitask.domain.usecase.CompleteTaskUseCase
 import com.example.unitask.domain.usecase.GetAllNotificationsUseCase
@@ -29,7 +30,8 @@ class DashboardViewModel(
     private val getSubjectsUseCase: GetSubjectsUseCase,
     private val getAllNotificationsUseCase: GetAllNotificationsUseCase,
     private val completeTaskUseCase: CompleteTaskUseCase,
-    private val awardXpUseCase: AwardXpUseCase
+    private val awardXpUseCase: AwardXpUseCase,
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     companion object {
@@ -43,15 +45,43 @@ class DashboardViewModel(
 
     // Estado interno para almacenar todas las tareas sin filtrar
     private var allTasksUnfiltered: List<TaskUiModel> = emptyList()
+    
+    // ID del usuario actual
+    private var currentUserId: String? = null
 
     init {
-        observeDashboardData()
+        loadCurrentUserAndObserveData()
+    }
+    
+    private fun loadCurrentUserAndObserveData() {
+        viewModelScope.launch {
+            val user = userRepository.getCurrentUser()
+            currentUserId = user?.id
+            
+            // Cargar racha del usuario
+            user?.id?.let { userId ->
+                val stats = userRepository.getUserStats(userId)
+                _uiState.update { it.copy(currentStreak = stats?.currentStreak ?: 0) }
+            }
+            
+            observeDashboardData()
+        }
     }
 
     fun onTaskCompleted(taskId: String) {
         viewModelScope.launch {
             runCatching { completeTaskUseCase(taskId) }
                 .onSuccess {
+                    // Actualizar estadísticas del usuario en la base de datos
+                    currentUserId?.let { userId ->
+                        userRepository.incrementTasksCompleted(userId)
+                        userRepository.addXp(userId, 25)
+                        
+                        // Actualizar racha en el UI
+                        val stats = userRepository.getUserStats(userId)
+                        _uiState.update { it.copy(currentStreak = stats?.currentStreak ?: 0) }
+                    }
+                    // También actualizar en SharedPreferences para compatibilidad
                     awardXpUseCase(25)
                 }
                 .onFailure { error ->
@@ -93,6 +123,29 @@ class DashboardViewModel(
             )
         }
     }
+    
+    /**
+     * Refresca los datos del dashboard.
+     */
+    fun refresh() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isRefreshing = true) }
+            
+            // Recargar datos del usuario
+            val user = userRepository.getCurrentUser()
+            currentUserId = user?.id
+            
+            // Actualizar racha
+            user?.id?.let { userId ->
+                val stats = userRepository.getUserStats(userId)
+                _uiState.update { it.copy(currentStreak = stats?.currentStreak ?: 0) }
+            }
+            
+            // Esperar un poco para mostrar el indicador de refresh
+            kotlinx.coroutines.delay(500)
+            _uiState.update { it.copy(isRefreshing = false) }
+        }
+    }
 
     private fun applyDayFilter(tasks: List<TaskUiModel>, filter: DayFilter): List<TaskUiModel> {
         return when (filter) {
@@ -106,8 +159,8 @@ class DashboardViewModel(
     private fun observeDashboardData() {
         viewModelScope.launch {
             combine(
-                getUrgentTasksUseCase(),
-                getAllTasksUseCase(),
+                getUrgentTasksUseCase(userId = currentUserId),
+                getAllTasksUseCase(userId = currentUserId),
                 getSubjectsUseCase(),
                 getAllNotificationsUseCase()
             ) { urgent, all, subjects, notifications ->
@@ -119,7 +172,7 @@ class DashboardViewModel(
                 val filteredTasks = applyDayFilter(allTasksUi, currentFilter)
                 val pagedTasks = filteredTasks.take(PAGE_SIZE)
                 
-                DashboardUiState(
+                _uiState.value.copy(
                     urgentTasks = urgent.map { it.toUiModel(subjects, grouped[it.id]) },
                     allTasks = allTasksUi,
                     filteredTasks = filteredTasks,
@@ -171,7 +224,9 @@ data class DashboardUiState(
     val selectedDayFilter: DayFilter = DayFilter.All,
     val currentPage: Int = 0,
     val hasMorePages: Boolean = false,
+    val currentStreak: Int = 0,
     val isLoading: Boolean = true,
+    val isRefreshing: Boolean = false,
     val errorMessage: String? = null
 )
 
