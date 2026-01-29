@@ -52,6 +52,7 @@ import com.example.unitask.di.AppModule
 import com.example.unitask.presentation.ui.components.DayFilter
 import com.example.unitask.presentation.ui.components.DayFilterChips
 import com.example.unitask.presentation.ui.components.EmptyState
+import com.example.unitask.presentation.ui.components.SwipeableTaskCard
 import com.example.unitask.presentation.ui.components.TaskCard
 import com.example.unitask.presentation.viewmodel.DashboardUiState
 import com.example.unitask.presentation.viewmodel.DashboardViewModel
@@ -91,6 +92,7 @@ fun DashboardRoute(
         onAlarmSettingsClick = onAlarmSettingsClick,
         onTaskClick = onTaskClick,
         onTaskCompleted = viewModel::onTaskCompleted,
+        onTaskDeleted = viewModel::onTaskDeleted,
         onDayFilterSelected = viewModel::onDayFilterSelected,
         onLoadMoreTasks = viewModel::loadNextPage,
         onRefresh = viewModel::refresh,
@@ -113,6 +115,7 @@ fun DashboardScreen(
     onAlarmSettingsClick: (String) -> Unit,
     onTaskClick: (String) -> Unit,
     onTaskCompleted: (String) -> Unit,
+    onTaskDeleted: (String) -> Unit,
     onDayFilterSelected: (DayFilter) -> Unit,
     onLoadMoreTasks: () -> Unit,
     onRefresh: () -> Unit,
@@ -130,6 +133,7 @@ fun DashboardScreen(
         onAlarmSettingsClick = onAlarmSettingsClick,
         onTaskClick = onTaskClick,
         onTaskCompleted = onTaskCompleted,
+        onTaskDeleted = onTaskDeleted,
         onDayFilterSelected = onDayFilterSelected,
         onLoadMoreTasks = onLoadMoreTasks,
         onRefresh = onRefresh,
@@ -154,6 +158,7 @@ fun DashboardScreenForTest(
     onAlarmSettingsClick: (String) -> Unit,
     onTaskClick: (String) -> Unit,
     onTaskCompleted: (String) -> Unit,
+    onTaskDeleted: (String) -> Unit = {},
     onDayFilterSelected: (DayFilter) -> Unit = {},
     onLoadMoreTasks: () -> Unit = {},
     onRefresh: () -> Unit = {},
@@ -255,9 +260,10 @@ fun DashboardScreenForTest(
                 }
             } else {
                 items(state.displayedTasks, key = { it.id }) { task ->
-                    TaskCard(
+                    SwipeableTaskCard(
                         task = task,
                         onTaskCompleted = onTaskCompleted,
+                        onTaskDeleted = onTaskDeleted,
                         onAlarmSettingsClick = onAlarmSettingsClick,
                         onTaskClick = onTaskClick,
                         modifier = Modifier

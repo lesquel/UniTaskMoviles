@@ -1,12 +1,15 @@
 package com.example.unitask.presentation.ui.components
 
 import android.graphics.Color.parseColor
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -15,18 +18,29 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.foundation.clickable
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.ui.res.stringResource
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -196,5 +210,123 @@ fun SubjectBadge(label: String, colorHex: String, modifier: Modifier = Modifier)
         )
     Spacer(modifier = Modifier.width(6.dp))
         Text(text = label, style = MaterialTheme.typography.labelLarge, color = color)
+    }
+}
+
+/**
+ * TaskCard con soporte para gestos de swipe:
+ * - Deslizar a la derecha: Marca como completada (fondo verde)
+ * - Deslizar a la izquierda: Eliminar (fondo rojo)
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SwipeableTaskCard(
+    task: TaskUiModel,
+    modifier: Modifier = Modifier,
+    onTaskCompleted: (String) -> Unit,
+    onTaskDeleted: (String) -> Unit,
+    onAlarmSettingsClick: (String) -> Unit,
+    onTaskClick: (String) -> Unit
+) {
+    var isRemoved by remember { mutableStateOf(false) }
+    
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            when (value) {
+                SwipeToDismissBoxValue.StartToEnd -> {
+                    // Deslizar hacia la derecha = Completar
+                    if (!task.isCompleted) {
+                        onTaskCompleted(task.id)
+                    }
+                    true
+                }
+                SwipeToDismissBoxValue.EndToStart -> {
+                    // Deslizar hacia la izquierda = Eliminar
+                    isRemoved = true
+                    onTaskDeleted(task.id)
+                    true
+                }
+                SwipeToDismissBoxValue.Settled -> false
+            }
+        },
+        positionalThreshold = { it * 0.4f }
+    )
+    
+    // Animaciones
+    val dismissDirection = dismissState.targetValue
+    
+    SwipeToDismissBox(
+        state = dismissState,
+        modifier = modifier,
+        backgroundContent = {
+            SwipeBackground(dismissDirection = dismissDirection)
+        },
+        enableDismissFromStartToEnd = !task.isCompleted, // Solo permitir completar si no está completada
+        enableDismissFromEndToStart = true // Siempre permitir eliminar
+    ) {
+        TaskCard(
+            task = task,
+            onTaskCompleted = onTaskCompleted,
+            onAlarmSettingsClick = onAlarmSettingsClick,
+            onTaskClick = onTaskClick
+        )
+    }
+}
+
+/**
+ * Fondo que se muestra durante el swipe con colores y iconos indicativos.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SwipeBackground(dismissDirection: SwipeToDismissBoxValue) {
+    val color by animateColorAsState(
+        targetValue = when (dismissDirection) {
+            SwipeToDismissBoxValue.StartToEnd -> Color(0xFF4CAF50) // Verde para completar
+            SwipeToDismissBoxValue.EndToStart -> Color(0xFFF44336) // Rojo para eliminar
+            SwipeToDismissBoxValue.Settled -> Color.Transparent
+        },
+        label = "swipe_background_color"
+    )
+    
+    val scale by animateFloatAsState(
+        targetValue = if (dismissDirection != SwipeToDismissBoxValue.Settled) 1.2f else 0.8f,
+        label = "icon_scale"
+    )
+    
+    val alignment = when (dismissDirection) {
+        SwipeToDismissBoxValue.StartToEnd -> Alignment.CenterStart
+        SwipeToDismissBoxValue.EndToStart -> Alignment.CenterEnd
+        SwipeToDismissBoxValue.Settled -> Alignment.Center
+    }
+    
+    val icon = when (dismissDirection) {
+        SwipeToDismissBoxValue.StartToEnd -> Icons.Default.Check
+        SwipeToDismissBoxValue.EndToStart -> Icons.Default.Delete
+        SwipeToDismissBoxValue.Settled -> Icons.Default.Check
+    }
+    
+    val iconDescription = when (dismissDirection) {
+        SwipeToDismissBoxValue.StartToEnd -> "Marcar como completada"
+        SwipeToDismissBoxValue.EndToStart -> "Eliminar tarea"
+        SwipeToDismissBoxValue.Settled -> null
+    }
+    
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(color, RoundedCornerShape(16.dp))
+            .padding(horizontal = 24.dp),
+        contentAlignment = alignment
+    ) {
+        if (dismissDirection != SwipeToDismissBoxValue.Settled) {
+            Icon(
+                imageVector = icon,
+                contentDescription = iconDescription,
+                modifier = Modifier
+                    .size(32.dp)
+                    .scale(scale),
+                tint = Color.White
+            )
+        }
     }
 }

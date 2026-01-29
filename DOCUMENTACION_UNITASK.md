@@ -173,6 +173,7 @@ Desarrollado con ❤️ para estudiantes, por estudiantes.
 ## Estructura de Carpetas
 
 ```
+
 app/src/main/java/com/example/unitask/
 │
 ├── 📁 data/                          # Capa de datos

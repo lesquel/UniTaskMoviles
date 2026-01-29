@@ -11,22 +11,33 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import android.content.pm.PackageManager
+import com.example.unitask.data.AppTheme
+import com.example.unitask.data.SessionRepository
+import com.example.unitask.data.ThemePreferencesRepository
 import com.example.unitask.di.AppModule
 import com.example.unitask.notifications.NotificationHelper
 import com.example.unitask.presentation.navigation.UniTaskApp
 import com.example.unitask.ui.theme.UniTaskTheme
 
 class MainActivity : ComponentActivity() {
+    
+    private lateinit var themeRepository: ThemePreferencesRepository
+    private lateinit var sessionRepository: SessionRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Configura el contenedor manual de dependencias que usan ViewModels y repositorios.
         AppModule.configureAppModule(applicationContext)
+        
+        // Inicializar repositorios
+        themeRepository = ThemePreferencesRepository(applicationContext)
+        sessionRepository = SessionRepository(applicationContext)
+        
         // Prepara canales de notificación antes de que puedan dispararse alertas.
         val notificationManager = getSystemService(NotificationManager::class.java)
             ?: throw IllegalStateException("NotificationManager unavailable")
@@ -62,12 +73,27 @@ class MainActivity : ComponentActivity() {
         // Edge-to-edge para renderizar la UI bajo las barras del sistema.
         enableEdgeToEdge()
         setContent {
+            // Observar cambios en las preferencias de tema
+            val themeSettings by themeRepository.settings.collectAsState()
             val systemDark = isSystemInDarkTheme()
-            val isDarkTheme = rememberSaveable { mutableStateOf(systemDark) }
-            UniTaskTheme(darkTheme = isDarkTheme.value) {
+            
+            // Determinar si usar tema oscuro basado en la configuración
+            val isDarkTheme = when (themeSettings.theme) {
+                AppTheme.SYSTEM -> systemDark
+                AppTheme.LIGHT -> false
+                AppTheme.DARK -> true
+            }
+            
+            UniTaskTheme(settings = themeSettings) {
                 UniTaskApp(
-                    isDarkTheme = isDarkTheme.value,
-                    onToggleTheme = { isDarkTheme.value = !isDarkTheme.value }
+                    isDarkTheme = isDarkTheme,
+                    onToggleTheme = { 
+                        // Alternar entre claro y oscuro
+                        val newTheme = if (isDarkTheme) AppTheme.LIGHT else AppTheme.DARK
+                        themeRepository.updateTheme(newTheme)
+                    },
+                    themeRepository = themeRepository,
+                    sessionRepository = sessionRepository
                 )
             }
         }

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import android.net.Uri
@@ -16,17 +17,22 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.unitask.presentation.ui.components.BottomNavBar
+import com.example.unitask.data.SessionRepository
+import com.example.unitask.data.ThemePreferencesRepository
 import com.example.unitask.presentation.ui.screens.AddTaskRoute
 import com.example.unitask.presentation.ui.screens.AlarmSettingsScreen
 import com.example.unitask.presentation.ui.screens.DashboardRoute
 import com.example.unitask.presentation.ui.screens.LeaderboardScreen
 import com.example.unitask.presentation.ui.screens.LoginRoute
+import com.example.unitask.presentation.ui.screens.OnboardingScreen
 import com.example.unitask.presentation.ui.screens.ProfileRoute
 import com.example.unitask.presentation.ui.screens.RegisterRoute
+import com.example.unitask.presentation.ui.screens.SettingsScreen
 import com.example.unitask.presentation.ui.screens.SubjectsRoute
 
 // Navigation destinations that identify each screen in the Compose NavHost.
 private sealed class UniTaskDestination(val route: String) {
+    object Onboarding : UniTaskDestination("onboarding")
     object Dashboard : UniTaskDestination("dashboard")
     object AddTask : UniTaskDestination("add-task") {
         const val ARG_TASK_ID = "taskId"
@@ -43,6 +49,7 @@ private sealed class UniTaskDestination(val route: String) {
     }
     object Profile : UniTaskDestination("profile")
     object Leaderboard : UniTaskDestination("leaderboard")
+    object Settings : UniTaskDestination("settings")
     object Login : UniTaskDestination("login")
     object Register : UniTaskDestination("register")
 }
@@ -56,21 +63,46 @@ private val bottomNavRoutes = setOf(
     UniTaskDestination.Leaderboard.route
 )
 
+// Rutas que no requieren autenticación
+private val publicRoutes = setOf(
+    UniTaskDestination.Login.route,
+    UniTaskDestination.Register.route,
+    UniTaskDestination.Onboarding.route
+)
+
 /**
  * Root composable que aloja la navegación de la app.
+ * Verifica el estado de sesión antes de mostrar cualquier pantalla.
  */
 @Composable
 fun UniTaskApp(
     modifier: Modifier = Modifier,
     isDarkTheme: Boolean,
-    onToggleTheme: () -> Unit
+    onToggleTheme: () -> Unit,
+    themeRepository: ThemePreferencesRepository? = null,
+    sessionRepository: SessionRepository? = null
 ) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route?.substringBefore("?")
     
+    // Observar estado de sesión
+    val isLoggedIn by sessionRepository?.isLoggedIn?.collectAsState() ?: androidx.compose.runtime.remember { 
+        androidx.compose.runtime.mutableStateOf(false) 
+    }
+    val hasSeenOnboarding by sessionRepository?.hasSeenOnboarding?.collectAsState() ?: androidx.compose.runtime.remember { 
+        androidx.compose.runtime.mutableStateOf(true) 
+    }
+    
+    // Determinar la ruta inicial basada en el estado de sesión
+    val startDestination = when {
+        !hasSeenOnboarding -> UniTaskDestination.Onboarding.route
+        !isLoggedIn -> UniTaskDestination.Login.route
+        else -> UniTaskDestination.Dashboard.route
+    }
+    
     // Determina si mostrar la barra de navegación inferior
-    val showBottomBar = currentRoute in bottomNavRoutes
+    val showBottomBar = currentRoute in bottomNavRoutes && isLoggedIn
     
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -97,9 +129,12 @@ fun UniTaskApp(
         Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             UniTaskNavHost(
                 navController = navController,
+                startDestination = startDestination,
                 modifier = Modifier.fillMaxSize(),
                 isDarkTheme = isDarkTheme,
-                onToggleTheme = onToggleTheme
+                onToggleTheme = onToggleTheme,
+                themeRepository = themeRepository,
+                sessionRepository = sessionRepository
             )
         }
     }
@@ -111,15 +146,30 @@ fun UniTaskApp(
 @Composable
 private fun UniTaskNavHost(
     navController: NavHostController,
+    startDestination: String,
     modifier: Modifier = Modifier,
     isDarkTheme: Boolean,
-    onToggleTheme: () -> Unit
+    onToggleTheme: () -> Unit,
+    themeRepository: ThemePreferencesRepository? = null,
+    sessionRepository: SessionRepository? = null
 ) {
     NavHost(
         navController = navController,
-        startDestination = UniTaskDestination.Dashboard.route,
+        startDestination = startDestination,
         modifier = modifier
     ) {
+        // Pantalla de Onboarding
+        composable(UniTaskDestination.Onboarding.route) {
+            OnboardingScreen(
+                onFinish = {
+                    sessionRepository?.setOnboardingComplete()
+                    navController.navigate(UniTaskDestination.Login.route) {
+                        popUpTo(UniTaskDestination.Onboarding.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+        
         composable(UniTaskDestination.Dashboard.route) {
             DashboardRoute(
                 onAddTaskClick = { navController.navigate(UniTaskDestination.AddTask.route) },
@@ -127,7 +177,10 @@ private fun UniTaskNavHost(
                 onManageSubjectsClick = { navController.navigate(UniTaskDestination.Subjects.route) },
                 onAlarmSettingsClick = { id -> navController.navigate(UniTaskDestination.AlarmSettings.createRoute(id)) },
                 isDarkTheme = isDarkTheme,
-                onToggleTheme = onToggleTheme
+                onToggleTheme = {
+                    // Navegar a settings en lugar de toggle directo
+                    navController.navigate(UniTaskDestination.Settings.route)
+                }
             )
         }
         composable(
@@ -173,6 +226,7 @@ private fun UniTaskNavHost(
             ProfileRoute(
                 onBack = { navController.popBackStack() },
                 onLogout = {
+                    sessionRepository?.logout()
                     navController.navigate(UniTaskDestination.Login.route) {
                         popUpTo(0) { inclusive = true }
                     }
@@ -186,7 +240,8 @@ private fun UniTaskNavHost(
         }
         composable(UniTaskDestination.Login.route) {
             LoginRoute(
-                onLoginSuccess = {
+                onLoginSuccess = { userId ->
+                    sessionRepository?.setLoggedIn(true, userId)
                     navController.navigate(UniTaskDestination.Dashboard.route) {
                         popUpTo(0) { inclusive = true }
                     }
@@ -198,7 +253,8 @@ private fun UniTaskNavHost(
         }
         composable(UniTaskDestination.Register.route) {
             RegisterRoute(
-                onRegisterSuccess = {
+                onRegisterSuccess = { userId ->
+                    sessionRepository?.setLoggedIn(true, userId)
                     navController.navigate(UniTaskDestination.Dashboard.route) {
                         popUpTo(0) { inclusive = true }
                     }
@@ -207,6 +263,14 @@ private fun UniTaskNavHost(
                     navController.popBackStack()
                 }
             )
+        }
+        composable(UniTaskDestination.Settings.route) {
+            if (themeRepository != null) {
+                SettingsScreen(
+                    themeRepository = themeRepository,
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
     }
 }

@@ -24,6 +24,7 @@ import com.example.unitask.domain.usecase.AwardXpUseCase
 import com.example.unitask.domain.usecase.CancelAlarmUseCase
 import com.example.unitask.domain.usecase.CompleteTaskUseCase
 import com.example.unitask.domain.usecase.DeleteSubjectUseCase
+import com.example.unitask.domain.usecase.DeleteTaskUseCase
 import com.example.unitask.domain.usecase.EditSubjectUseCase
 import com.example.unitask.domain.usecase.GetAllNotificationsUseCase
 import com.example.unitask.domain.usecase.GetAllTasksUseCase
@@ -91,6 +92,10 @@ object AppModule {
     private val completeTaskUseCase: CompleteTaskUseCase by lazy {
         CompleteTaskUseCase(taskRepository)
     }
+    
+    private val deleteTaskUseCase: DeleteTaskUseCase by lazy {
+        DeleteTaskUseCase(taskRepository)
+    }
 
     private val getSubjectsUseCase: GetSubjectsUseCase by lazy {
         GetSubjectsUseCase(subjectRepository)
@@ -127,6 +132,7 @@ object AppModule {
                 getSubjectsUseCase = getSubjectsUseCase,
                 getAllNotificationsUseCase = getAllNotificationsUseCase,
                 completeTaskUseCase = completeTaskUseCase,
+                deleteTaskUseCase = deleteTaskUseCase,
                 awardXpUseCase = awardXpUseCase,
                 userRepository = userRepo
             )
@@ -220,7 +226,7 @@ object AppModule {
         if (_alarmScheduler == null) {
             val alarmManager =
                 context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            val wrapper: AlarmManagerWrapper = RealAlarmManagerWrapper(alarmManager)
+            val wrapper: AlarmManagerWrapper = RealAlarmManagerWrapper(context.applicationContext, alarmManager)
             _alarmScheduler = AlarmScheduler(wrapper)
         }
         if (_notificationRepository == null) {

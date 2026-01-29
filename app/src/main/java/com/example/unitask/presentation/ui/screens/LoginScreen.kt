@@ -45,7 +45,7 @@ import com.example.unitask.presentation.viewmodel.AuthViewModel
 
 @Composable
 fun LoginRoute(
-    onLoginSuccess: () -> Unit,
+    onLoginSuccess: (String) -> Unit,
     onNavigateToRegister: () -> Unit
 ) {
     val viewModel: AuthViewModel = viewModel(factory = AppModule.authViewModelFactory())
@@ -55,7 +55,7 @@ fun LoginRoute(
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
-                is AuthEvent.LoginSuccess -> onLoginSuccess()
+                is AuthEvent.LoginSuccess -> onLoginSuccess(event.userId)
                 is AuthEvent.RegisterSuccess -> { /* Not used here */ }
                 is AuthEvent.Error -> {
                     snackbarHostState.showSnackbar(event.message)

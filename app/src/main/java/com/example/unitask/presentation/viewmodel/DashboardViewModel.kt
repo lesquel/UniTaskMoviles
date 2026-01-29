@@ -8,6 +8,7 @@ import com.example.unitask.domain.model.Task
 import com.example.unitask.domain.repository.UserRepository
 import com.example.unitask.domain.usecase.AwardXpUseCase
 import com.example.unitask.domain.usecase.CompleteTaskUseCase
+import com.example.unitask.domain.usecase.DeleteTaskUseCase
 import com.example.unitask.domain.usecase.GetAllNotificationsUseCase
 import com.example.unitask.domain.usecase.GetAllTasksUseCase
 import com.example.unitask.domain.usecase.GetSubjectsUseCase
@@ -30,6 +31,7 @@ class DashboardViewModel(
     private val getSubjectsUseCase: GetSubjectsUseCase,
     private val getAllNotificationsUseCase: GetAllNotificationsUseCase,
     private val completeTaskUseCase: CompleteTaskUseCase,
+    private val deleteTaskUseCase: DeleteTaskUseCase,
     private val awardXpUseCase: AwardXpUseCase,
     private val userRepository: UserRepository
 ) : ViewModel() {
@@ -86,6 +88,21 @@ class DashboardViewModel(
                 }
                 .onFailure { error ->
                     _uiState.update { it.copy(errorMessage = error.message) }
+                }
+        }
+    }
+    
+    /**
+     * Elimina una tarea por su ID.
+     */
+    fun onTaskDeleted(taskId: String) {
+        viewModelScope.launch {
+            runCatching { deleteTaskUseCase(taskId) }
+                .onSuccess {
+                    // La UI se actualizará automáticamente por el Flow
+                }
+                .onFailure { error ->
+                    _uiState.update { it.copy(errorMessage = "Error al eliminar: ${error.message}") }
                 }
         }
     }

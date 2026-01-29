@@ -21,8 +21,8 @@ data class AuthUiState(
 )
 
 sealed class AuthEvent {
-    object LoginSuccess : AuthEvent()
-    object RegisterSuccess : AuthEvent()
+    data class LoginSuccess(val userId: String) : AuthEvent()
+    data class RegisterSuccess(val userId: String) : AuthEvent()
     data class Error(val message: String) : AuthEvent()
 }
 
@@ -78,8 +78,8 @@ class AuthViewModel(
             val result = userRepository.login(state.usernameOrEmail.trim(), state.password)
             
             result.fold(
-                onSuccess = {
-                    _events.send(AuthEvent.LoginSuccess)
+                onSuccess = { user ->
+                    _events.send(AuthEvent.LoginSuccess(user.id))
                 },
                 onFailure = { error ->
                     _events.send(AuthEvent.Error(error.message ?: "Usuario o contraseña incorrectos"))
@@ -142,8 +142,8 @@ class AuthViewModel(
             val result = userRepository.register(state.username.trim(), state.email.trim(), state.password)
             
             result.fold(
-                onSuccess = {
-                    _events.send(AuthEvent.RegisterSuccess)
+                onSuccess = { user ->
+                    _events.send(AuthEvent.RegisterSuccess(user.id))
                 },
                 onFailure = { error ->
                     _events.send(AuthEvent.Error(error.message ?: "Error al registrar"))
