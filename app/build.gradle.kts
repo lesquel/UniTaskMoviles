@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
 }
 
@@ -87,8 +88,14 @@ dependencies {
     // Ktor client for Supabase
     implementation("io.ktor:ktor-client-android:2.3.12")
     implementation("io.ktor:ktor-client-core:2.3.12")
+    implementation("io.ktor:ktor-client-plugins:2.3.12")
+    implementation("io.ktor:ktor-client-content-negotiation:2.3.12")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.12")
     implementation("io.ktor:ktor-utils:2.3.12")
     
     // Coil for image loading
     implementation("io.coil-kt:coil-compose:2.5.0")
+    
+    // Kotlin Serialization
+    implementation(libs.kotlinx.serialization.json)
 }

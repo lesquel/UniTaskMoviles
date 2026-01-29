@@ -69,6 +69,43 @@ ALTER TABLE public.subjects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tasks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.alarm_templates ENABLE ROW LEVEL SECURITY;
 
+-- =============================================================================
+-- Eliminar políticas existentes (para poder recrearlas)
+-- =============================================================================
+
+-- Políticas de profiles
+DROP POLICY IF EXISTS "Users can view own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Users can insert own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Anyone can view profiles for leaderboard" ON public.profiles;
+
+-- Políticas de user_stats
+DROP POLICY IF EXISTS "Users can view own stats" ON public.user_stats;
+DROP POLICY IF EXISTS "Users can update own stats" ON public.user_stats;
+DROP POLICY IF EXISTS "Users can insert own stats" ON public.user_stats;
+
+-- Políticas de subjects
+DROP POLICY IF EXISTS "Users can view own subjects" ON public.subjects;
+DROP POLICY IF EXISTS "Users can create subjects" ON public.subjects;
+DROP POLICY IF EXISTS "Users can update own subjects" ON public.subjects;
+DROP POLICY IF EXISTS "Users can delete own subjects" ON public.subjects;
+
+-- Políticas de tasks
+DROP POLICY IF EXISTS "Users can view own tasks" ON public.tasks;
+DROP POLICY IF EXISTS "Users can create tasks" ON public.tasks;
+DROP POLICY IF EXISTS "Users can update own tasks" ON public.tasks;
+DROP POLICY IF EXISTS "Users can delete own tasks" ON public.tasks;
+
+-- Políticas de alarm_templates
+DROP POLICY IF EXISTS "Users can view own alarm templates" ON public.alarm_templates;
+DROP POLICY IF EXISTS "Users can create alarm templates" ON public.alarm_templates;
+DROP POLICY IF EXISTS "Users can update own alarm templates" ON public.alarm_templates;
+DROP POLICY IF EXISTS "Users can delete own alarm templates" ON public.alarm_templates;
+
+-- =============================================================================
+-- Crear políticas nuevas
+-- =============================================================================
+
 -- Políticas para profiles
 CREATE POLICY "Users can view own profile" 
     ON public.profiles FOR SELECT 

@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.unitask.R
 import com.example.unitask.di.AppModule
+import com.example.unitask.presentation.ui.components.LeaderboardListSkeleton
 import com.example.unitask.presentation.viewmodel.LeaderboardFilter
 import com.example.unitask.presentation.viewmodel.LeaderboardViewModel
 import com.example.unitask.presentation.viewmodel.UserRankingItem
@@ -98,32 +99,42 @@ fun LeaderboardScreen(
                 }
             }
             
-            if (state.rankings.isEmpty()) {
+            when {
+                // Mostrar skeleton mientras carga
+                state.isLoading -> {
+                    LeaderboardListSkeleton(
+                        itemCount = 10,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
                 // Estado vacío
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(32.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                state.rankings.isEmpty() -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.EmojiEvents,
-                            contentDescription = null,
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = stringResource(R.string.leaderboard_no_users),
-                            style = MaterialTheme.typography.bodyLarge,
-                            textAlign = TextAlign.Center
-                        )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.EmojiEvents,
+                                contentDescription = null,
+                                modifier = Modifier.size(64.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = stringResource(R.string.leaderboard_no_users),
+                                style = MaterialTheme.typography.bodyLarge,
+                                textAlign = TextAlign.Center
+                            )
+                        }
                     }
                 }
-            } else {
+                // Lista de usuarios
+                else -> {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
@@ -173,6 +184,7 @@ fun LeaderboardScreen(
                 }
             }
             }
+        }
         }
     }
 }

@@ -34,7 +34,7 @@ data class LeaderboardUiState(
     val currentUserPosition: Int? = null,
     val currentUserData: UserRankingItem? = null,
     val currentStreak: Int = 0,
-    val isLoading: Boolean = false,
+    val isLoading: Boolean = true,
     val isRefreshing: Boolean = false
 )
 

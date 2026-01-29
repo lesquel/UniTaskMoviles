@@ -48,8 +48,13 @@ object SupabaseClientProvider {
      * Verifica si las credenciales de Supabase están configuradas.
      */
     fun isConfigured(): Boolean {
-        return BuildConfig.SUPABASE_URL.isNotEmpty() &&
-               BuildConfig.SUPABASE_ANON_KEY.isNotEmpty() &&
-               BuildConfig.SUPABASE_URL != "https://your-project.supabase.co"
+        return try {
+            BuildConfig.SUPABASE_URL.isNotEmpty() &&
+                   BuildConfig.SUPABASE_ANON_KEY.isNotEmpty() &&
+                   BuildConfig.SUPABASE_URL != "https://your-project.supabase.co" &&
+                   BuildConfig.SUPABASE_URL.contains("supabase.co")
+        } catch (e: Exception) {
+            false
+        }
     }
 }

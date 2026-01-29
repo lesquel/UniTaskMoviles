@@ -54,6 +54,8 @@ import com.example.unitask.presentation.ui.components.DayFilterChips
 import com.example.unitask.presentation.ui.components.EmptyState
 import com.example.unitask.presentation.ui.components.SwipeableTaskCard
 import com.example.unitask.presentation.ui.components.TaskCard
+import com.example.unitask.presentation.ui.components.TaskListSkeleton
+import com.example.unitask.presentation.ui.components.UrgentTasksSkeleton
 import com.example.unitask.presentation.viewmodel.DashboardUiState
 import com.example.unitask.presentation.viewmodel.DashboardViewModel
 import com.example.unitask.presentation.viewmodel.RewardsViewModel
@@ -227,12 +229,25 @@ fun DashboardScreenForTest(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
             item {
-                UrgentTasksSection(
-                    tasks = state.urgentTasks,
-                    onTaskCompleted = onTaskCompleted,
-                    onAlarmSettingsClick = onAlarmSettingsClick,
-                    onTaskClick = onTaskClick
-                )
+                // Mostrar skeleton mientras carga
+                if (state.isLoading) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            text = stringResource(id = com.example.unitask.R.string.urgent),
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        UrgentTasksSkeleton()
+                    }
+                } else {
+                    UrgentTasksSection(
+                        tasks = state.urgentTasks,
+                        onTaskCompleted = onTaskCompleted,
+                        onAlarmSettingsClick = onAlarmSettingsClick,
+                        onTaskClick = onTaskClick
+                    )
+                }
             }
             item {
                 // Reward bar showing XP and level
@@ -254,7 +269,12 @@ fun DashboardScreenForTest(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
-            if (state.displayedTasks.isEmpty()) {
+            // Mostrar skeleton o contenido según el estado
+            if (state.isLoading) {
+                item {
+                    TaskListSkeleton(itemCount = 5)
+                }
+            } else if (state.displayedTasks.isEmpty()) {
                 item {
                     EmptyState()
                 }

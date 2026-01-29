@@ -50,15 +50,19 @@ class ThemePreferencesRepository(context: Context) {
     val settings: StateFlow<ThemeSettings> = _settings.asStateFlow()
     
     private fun loadSettings(): ThemeSettings {
-        val themeName = prefs.getString(KEY_THEME, AppTheme.SYSTEM.name) ?: AppTheme.SYSTEM.name
-        val accentName = prefs.getString(KEY_ACCENT, AccentColor.PURPLE.name) ?: AccentColor.PURPLE.name
-        val useDynamic = prefs.getBoolean(KEY_DYNAMIC, true)
-        
-        return ThemeSettings(
-            theme = AppTheme.valueOf(themeName),
-            accentColor = AccentColor.valueOf(accentName),
-            useDynamicColor = useDynamic
-        )
+        return try {
+            val themeName = prefs.getString(KEY_THEME, AppTheme.SYSTEM.name) ?: AppTheme.SYSTEM.name
+            val accentName = prefs.getString(KEY_ACCENT, AccentColor.PURPLE.name) ?: AccentColor.PURPLE.name
+            val useDynamic = prefs.getBoolean(KEY_DYNAMIC, true)
+            
+            ThemeSettings(
+                theme = try { AppTheme.valueOf(themeName) } catch (_: Exception) { AppTheme.SYSTEM },
+                accentColor = try { AccentColor.valueOf(accentName) } catch (_: Exception) { AccentColor.PURPLE },
+                useDynamicColor = useDynamic
+            )
+        } catch (_: Exception) {
+            ThemeSettings()
+        }
     }
     
     fun updateTheme(theme: AppTheme) {

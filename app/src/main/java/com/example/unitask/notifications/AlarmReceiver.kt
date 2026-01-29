@@ -47,8 +47,25 @@ class AlarmReceiver : BroadcastReceiver() {
         
         Log.d(TAG, "Processing alarm: $alarmId")
         
+        // Intentar iniciar el ForegroundService para procesar la alarma
+        try {
+            AlarmService.startAlarmService(context, intent)
+            Log.d(TAG, "AlarmService started successfully")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to start AlarmService, processing directly", e)
+            // Fallback: procesar directamente en el receiver
+            processAlarmDirectly(context, intent, alarmId)
+        }
+    }
+    
+    /**
+     * Procesa la alarma directamente si el servicio no puede iniciarse.
+     * Esto es un fallback para dispositivos más antiguos o situaciones especiales.
+     */
+    private fun processAlarmDirectly(context: Context, intent: Intent, alarmId: String) {
         // Adquirir WakeLock para asegurar que el dispositivo no duerma durante la notificación
         val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+        @Suppress("DEPRECATION")
         val wakeLock = powerManager.newWakeLock(
             PowerManager.PARTIAL_WAKE_LOCK or PowerManager.ACQUIRE_CAUSES_WAKEUP,
             "UniTask:AlarmWakeLock"

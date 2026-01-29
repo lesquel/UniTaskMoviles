@@ -31,43 +31,35 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Configura el contenedor manual de dependencias que usan ViewModels y repositorios.
-        AppModule.configureAppModule(applicationContext)
         
-        // Inicializar repositorios
-        themeRepository = ThemePreferencesRepository(applicationContext)
-        sessionRepository = SessionRepository(applicationContext)
-        
-        // Prepara canales de notificación antes de que puedan dispararse alertas.
-        val notificationManager = getSystemService(NotificationManager::class.java)
-            ?: throw IllegalStateException("NotificationManager unavailable")
-        val notificationHelper = NotificationHelper(applicationContext, notificationManager)
-        notificationHelper.createChannels()
-
-        // Solicita permiso de notificaciones en tiempo de ejecución (Android 13+).
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val perm = Manifest.permission.POST_NOTIFICATIONS
-            if (ContextCompat.checkSelfPermission(this@MainActivity, perm) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this@MainActivity, arrayOf(perm), 1001)
+        try {
+            // Configura el contenedor manual de dependencias que usan ViewModels y repositorios.
+            AppModule.configureAppModule(applicationContext)
+            
+            // Inicializar repositorios
+            themeRepository = ThemePreferencesRepository(applicationContext)
+            sessionRepository = SessionRepository(applicationContext)
+            
+            // Prepara canales de notificación antes de que puedan dispararse alertas.
+            val notificationManager = getSystemService(NotificationManager::class.java)
+            if (notificationManager != null) {
+                val notificationHelper = NotificationHelper(applicationContext, notificationManager)
+                notificationHelper.createChannels()
             }
-        }
 
-        // Verifica permiso para agendar alarmas exactas y abre la pantalla de ajustes si hace falta.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val am = getSystemService(android.app.AlarmManager::class.java)
-            if (am != null && !am.canScheduleExactAlarms()) {
-                // Pide al usuario autorización para alarmas exactas.
-                try {
-                    val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-                    intent.data = Uri.parse("package:${packageName}")
-                    startActivity(intent)
-                } catch (_: Exception) {
-                    // Alternativa: abre los ajustes de notificaciones de la app.
-                    val i = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                    i.data = Uri.fromParts("package", packageName, null)
-                    startActivity(i)
+            // Solicita permiso de notificaciones en tiempo de ejecución (Android 13+).
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                val perm = Manifest.permission.POST_NOTIFICATIONS
+                if (ContextCompat.checkSelfPermission(this@MainActivity, perm) != PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.requestPermissions(this@MainActivity, arrayOf(perm), 1001)
                 }
             }
+
+            // Verifica permiso para agendar alarmas exactas (solo mostrar una vez)
+            requestExactAlarmPermissionIfNeeded()
+
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Error initializing app", e)
         }
 
         // Edge-to-edge para renderizar la UI bajo las barras del sistema.
@@ -95,6 +87,29 @@ class MainActivity : ComponentActivity() {
                     themeRepository = themeRepository,
                     sessionRepository = sessionRepository
                 )
+            }
+        }
+    }
+    
+    private fun requestExactAlarmPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            try {
+                val am = getSystemService(android.app.AlarmManager::class.java)
+                if (am != null && !am.canScheduleExactAlarms()) {
+                    // Solo pedir permiso si no lo ha pedido recientemente
+                    val prefs = getSharedPreferences("unitask_prefs", MODE_PRIVATE)
+                    val lastAsked = prefs.getLong("alarm_perm_asked", 0)
+                    val now = System.currentTimeMillis()
+                    // Solo preguntar una vez por día
+                    if (now - lastAsked > 86400000L) {
+                        prefs.edit().putLong("alarm_perm_asked", now).apply()
+                        val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                        intent.data = Uri.parse("package:${packageName}")
+                        startActivity(intent)
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("MainActivity", "Error requesting alarm permission", e)
             }
         }
     }

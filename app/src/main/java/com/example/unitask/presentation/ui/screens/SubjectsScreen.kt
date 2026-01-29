@@ -53,6 +53,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.unitask.di.AppModule
+import com.example.unitask.presentation.ui.components.SubjectListSkeleton
 import com.example.unitask.presentation.viewmodel.SubjectItem
 import com.example.unitask.presentation.viewmodel.SubjectsEvent
 import com.example.unitask.presentation.viewmodel.SubjectsUiState
@@ -187,20 +188,32 @@ fun SubjectsScreenForTest(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            if (state.subjects.isEmpty()) {
-                EmptySubjectsState(modifier = Modifier.fillMaxSize())
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(state.subjects, key = { it.id }) { subject ->
-                        SubjectCard(
-                            subject = subject,
-                            onEdit = { onEdit(subject) },
-                            onDelete = { onDelete(subject) }
-                        )
+            when {
+                // Mostrar skeleton mientras carga
+                state.isLoading -> {
+                    SubjectListSkeleton(
+                        itemCount = 5,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+                // Mostrar estado vacío si no hay materias
+                state.subjects.isEmpty() -> {
+                    EmptySubjectsState(modifier = Modifier.fillMaxSize())
+                }
+                // Mostrar lista de materias
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(state.subjects, key = { it.id }) { subject ->
+                            SubjectCard(
+                                subject = subject,
+                                onEdit = { onEdit(subject) },
+                                onDelete = { onDelete(subject) }
+                            )
+                        }
                     }
                 }
             }

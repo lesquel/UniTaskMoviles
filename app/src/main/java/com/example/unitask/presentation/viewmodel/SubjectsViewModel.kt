@@ -57,11 +57,15 @@ class SubjectsViewModel(
         viewModelScope.launch {
             getSubjectsUseCase()
                 .catch { error ->
-                    _uiState.value = _uiState.value.copy(errorMessage = error.message)
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = error.message
+                    )
                 }
                 .collect { subjects ->
                     _uiState.value = _uiState.value.copy(
-                        subjects = subjects.map { it.toItem() }
+                        subjects = subjects.map { it.toItem() },
+                        isLoading = false
                     )
                 }
         }
@@ -146,6 +150,7 @@ class SubjectsViewModel(
 data class SubjectsUiState(
     val subjects: List<SubjectItem> = emptyList(),
     val currentStreak: Int = 0,
+    val isLoading: Boolean = true,
     val isRefreshing: Boolean = false,
     val errorMessage: String? = null
 )
